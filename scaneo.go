@@ -32,6 +32,7 @@ var (
 	structTmpl  = template.Must(template.New("scanStruct").Parse(scanStructFunc))
 	structsTmpl = template.Must(template.New("scanStructs").Parse(scanStructsFunc))
 
+	overwrite   = flag.Bool("c", false, "Overwrite file if exists.")
 	unexport    = flag.Bool("u", false, "Unexport functions")
 	inFiles     = flag.String("i", "", "File or directory containg structs")
 	outFilename = flag.String("o", "scans.go", "File containg scan functions")
@@ -41,6 +42,8 @@ var (
 func init() {
 	flag.Usage = func() {
 		fmt.Fprintln(os.Stderr, `Usage: scaneo -i filename [-o filename] [-h]
+
+    -c    Overwrite file if exists.
 
     -i    Files or directory that contains struct declarations. Use quotes for
           multiple files.
@@ -121,14 +124,24 @@ func main() {
 }
 
 func writeCode(packName string, unexport bool, modInfo []model) error {
+	var outfd *os.File
+	var err error
 	var outExists bool
-	if _, err := os.Stat(*outFilename); err == nil {
-		outExists = true
-	}
 
-	outfd, err := os.OpenFile(*outFilename, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
-	if err != nil {
-		return err
+	if *overwrite {
+		outfd, err = os.Create(*outFilename)
+		if err != nil {
+			return err
+		}
+	} else {
+		if _, err := os.Stat(*outFilename); err == nil {
+			outExists = true
+		}
+
+		outfd, err = os.OpenFile(*outFilename, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
+		if err != nil {
+			return err
+		}
 	}
 	defer outfd.Close()
 
