@@ -32,6 +32,7 @@ var (
 	structTmpl  = template.Must(template.New("scanStruct").Parse(scanStructFunc))
 	structsTmpl = template.Must(template.New("scanStructs").Parse(scanStructsFunc))
 
+	unexport    = flag.Bool("u", false, "Unexport functions")
 	inFiles     = flag.String("i", "", "File or directory containg structs")
 	outFilename = flag.String("o", "scans.go", "File containg scan functions")
 	packName    = flag.String("p", "current directory", "Package name")
@@ -47,6 +48,8 @@ func init() {
     -o    Name of output file. Default is scans.go.
 
     -p    Package name. Default is current directory.
+
+    -u    Unexport functions. Default is export all.
 
     -h    Display usage information and exit.`)
 	}
@@ -112,12 +115,12 @@ func main() {
 		modelInfo = append(modelInfo, info...)
 	}
 
-	if err := writeCode(*packName, modelInfo); err != nil {
+	if err := writeCode(*packName, *unexport, modelInfo); err != nil {
 		log.Fatalln("couldn't write code:", err)
 	}
 }
 
-func writeCode(packName string, modInfo []model) error {
+func writeCode(packName string, unexport bool, modInfo []model) error {
 	var outExists bool
 	if _, err := os.Stat(*outFilename); err == nil {
 		outExists = true
@@ -135,11 +138,23 @@ func writeCode(packName string, modInfo []model) error {
 		fmt.Fprintln(outfd, `import "database/sql"`+"\n")
 	}
 
-	if err := structTmpl.Execute(outfd, modInfo); err != nil {
+	data := struct {
+		Models []model
+		Access string
+	}{
+		Models: modInfo,
+		Access: "S",
+	}
+
+	if unexport {
+		data.Access = "s"
+	}
+
+	if err := structTmpl.Execute(outfd, data); err != nil {
 		return err
 	}
 
-	if err := structsTmpl.Execute(outfd, modInfo); err != nil {
+	if err := structsTmpl.Execute(outfd, data); err != nil {
 		return err
 	}
 
