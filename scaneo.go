@@ -31,7 +31,7 @@ var (
 	structTmpl  = template.Must(template.New("scanStruct").Parse(scanStructFunc))
 	structsTmpl = template.Must(template.New("scanStructs").Parse(scanStructsFunc))
 
-	inFilename  = flag.String("i", "structs.go", "File containg structs")
+	inFilename  = flag.String("i", "", "File containg structs")
 	outFilename = flag.String("o", "scans.go", "File containg scan functions")
 )
 
@@ -49,6 +49,12 @@ func init() {
 
 func main() {
 	flag.Parse()
+
+	if *inFilename == "" {
+		log.Println("Missing input filename.")
+		flag.Usage()
+		os.Exit(1)
+	}
 
 	bs, err := ioutil.ReadFile(*inFilename)
 	if err != nil {
