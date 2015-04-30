@@ -32,7 +32,7 @@ var (
 	structTmpl  = template.Must(template.New("scanStruct").Parse(scanStructFunc))
 	structsTmpl = template.Must(template.New("scanStructs").Parse(scanStructsFunc))
 
-	inFilename  = flag.String("i", "", "File containg structs")
+	inFiles     = flag.String("i", "", "File or directory containg structs")
 	outFilename = flag.String("o", "scans.go", "File containg scan functions")
 	packName    = flag.String("p", "current directory", "Package name")
 )
@@ -41,7 +41,8 @@ func init() {
 	flag.Usage = func() {
 		fmt.Fprintln(os.Stderr, `Usage: scaneo -i filename [-o filename] [-h]
 
-    -i    File that contains struct declarations.
+    -i    Files or directory that contains struct declarations. Use quotes for
+          multiple files.
 
     -o    Name of output file. Default is scans.go.
 
@@ -54,7 +55,7 @@ func init() {
 func main() {
 	flag.Parse()
 
-	if *inFilename == "" {
+	if *inFiles == "" {
 		log.Println("Missing input filename.")
 		flag.Usage()
 		os.Exit(1)
@@ -69,17 +70,49 @@ func main() {
 		*packName = filepath.Base(wd)
 	}
 
-	bs, err := ioutil.ReadFile(*inFilename)
-	if err != nil {
-		log.Fatalln("couldn't read input:", err)
+	files := make([]string, 0, 8)
+	for _, path := range strings.Split(*inFiles, " ") {
+		info, err := os.Stat(path)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		if info.IsDir() {
+			filepath.Walk(path, func(wPath string, wInfo os.FileInfo, _ error) error {
+				if wInfo.IsDir() {
+					return nil
+				} else if wInfo.Name()[0] == '.' {
+					return nil
+				} else if wInfo.Name() == *outFilename {
+					return nil
+				}
+
+				files = append(files, wPath)
+				return nil
+			})
+
+			continue
+		}
+
+		files = append(files, path)
 	}
 
-	modInfo, err := parseStructs(bs)
-	if err != nil {
-		log.Fatalln("couldn't parse structs:", err)
+	modelInfo := make([]model, 0, 8)
+	for _, fname := range files {
+		bs, err := ioutil.ReadFile(fname)
+		if err != nil {
+			log.Fatalln("couldn't read input:", err)
+		}
+
+		info, err := parseStructs(bs)
+		if err != nil {
+			log.Fatalln("couldn't parse structs:", err)
+		}
+
+		modelInfo = append(modelInfo, info...)
 	}
 
-	if err := writeCode(*packName, modInfo); err != nil {
+	if err := writeCode(*packName, modelInfo); err != nil {
 		log.Fatalln("couldn't write code:", err)
 	}
 }
