@@ -33,5 +33,6 @@ const (
 
 	return structs, nil
 }
+
 {{end}}`
 )
