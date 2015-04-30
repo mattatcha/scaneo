@@ -63,7 +63,7 @@ func main() {
 	if *packName == "current directory" {
 		wd, err := os.Getwd()
 		if err != nil {
-			log.Fatal(err)
+			log.Fatalln("couldn't get wd:", err)
 		}
 
 		*packName = filepath.Base(wd)
@@ -71,16 +71,16 @@ func main() {
 
 	bs, err := ioutil.ReadFile(*inFilename)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalln("couldn't read input:", err)
 	}
 
 	modInfo, err := parseStructs(bs)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalln("couldn't parse structs:", err)
 	}
 
 	if err := writeCode(*packName, modInfo); err != nil {
-		log.Fatal(err)
+		log.Fatalln("couldn't write code:", err)
 	}
 }
 
@@ -90,7 +90,7 @@ func writeCode(packName string, modInfo []model) error {
 		outExists = true
 	}
 
-	outfd, err := os.OpenFile(*outFilename, os.O_APPEND|os.O_WRONLY, 0644)
+	outfd, err := os.OpenFile(*outFilename, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
 	if err != nil {
 		return err
 	}
