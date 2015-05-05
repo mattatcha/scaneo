@@ -54,11 +54,19 @@ func main() {
 							sdata.Field = append(sdata.Field, ident.Name)
 						}
 
-						ident, isIdent := fl.Type.(*ast.Ident)
-						if !isIdent {
-							continue
+						switch tp := fl.Type.(type) {
+						case *ast.Ident:
+							sdata.Type = append(sdata.Type, tp.Name)
+						case *ast.SelectorExpr:
+							ident, isIdent := tp.X.(*ast.Ident)
+							if !isIdent {
+								continue
+							}
+
+							sdata.Type = append(sdata.Type,
+								fmt.Sprintf("%s.%s", ident.Name, tp.Sel.Name))
 						}
-						sdata.Type = append(sdata.Type, ident.Name)
+
 					}
 				}
 			}
@@ -67,11 +75,11 @@ func main() {
 		sdatas = append(sdatas, sdata)
 	}
 
-	fmt.Println("\n")
 	for _, sd := range sdatas {
 		fmt.Println(sd.Name)
 
 		if len(sd.Field) != len(sd.Type) {
+			log.Println(sd)
 			log.Fatal("Ahhh!!")
 		}
 
