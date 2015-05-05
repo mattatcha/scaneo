@@ -24,7 +24,7 @@ func main() {
 	fset := token.NewFileSet()
 	astf, err := parser.ParseFile(fset, srcFile, nil, 0)
 	if err != nil {
-		log.Println("'syntax error' - parser probably")
+		log.Println(`"syntax error" - parser probably`)
 		log.Fatal(err)
 	}
 
