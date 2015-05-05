@@ -1,13 +1,13 @@
 package main
 
 const (
-	scanStructFunc = `{{range .Models}}func {{$.Access}}can{{.StructName}}(r *sql.Row) ({{.StructName}}, error) {
-	var s {{.StructName}}
+	scanStructFunc = `{{range .Tokens}}func {{$.Access}}can{{.Name}}(r *sql.Row) ({{.Name}}, error) {
+	var s {{.Name}}
 
-	if err := r.Scan({{range .FieldName}}
+	if err := r.Scan({{range .Fields}}
 		&s.{{.}},{{end}}
 	); err != nil {
-		return {{.StructName}}{}, err
+		return {{.Name}}{}, err
 	}
 
 	return s, nil
@@ -15,14 +15,14 @@ const (
 
 {{end}}`
 
-	scanStructsFunc = `{{range .Models}}func {{$.Access}}can{{.StructName}}s(rs *sql.Rows) ([]{{.StructName}}, error) {
-	structs := make([]{{.StructName}}, 0, 16)
+	scanStructsFunc = `{{range .Tokens}}func {{$.Access}}can{{.Name}}s(rs *sql.Rows) ([]{{.Name}}, error) {
+	structs := make([]{{.Name}}, 0, 16)
 
 	var err error
 	for rs.Next() {
-		var s {{.StructName}}
+		var s {{.Name}}
 
-		if err = rs.Scan({{range .FieldName}}
+		if err = rs.Scan({{range .Fields}}
 			&s.{{.}},{{end}}
 		); err != nil {
 			return nil, err
