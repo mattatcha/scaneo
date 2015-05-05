@@ -19,7 +19,7 @@ type structToken struct {
 }
 
 func main() {
-	sdatas := make([]structToken, 0, 8)
+	structToks := make([]structToken, 0, 8)
 
 	fset := token.NewFileSet()
 	astf, err := parser.ParseFile(fset, srcFile, nil, 0)
@@ -30,7 +30,7 @@ func main() {
 
 	// ast.Print(fset, astf)
 	for _, dec := range astf.Decls {
-		sdata := structToken{
+		structTok := structToken{
 			Fields: make([]string, 0, 8),
 			Types:  make([]string, 0, 8),
 		}
@@ -46,7 +46,7 @@ func main() {
 				continue
 			}
 
-			sdata.Name = typeSpec.Name.Name
+			structTok.Name = typeSpec.Name.Name
 
 			structType, isStructType := typeSpec.Type.(*ast.StructType)
 			if !isStructType {
@@ -55,29 +55,29 @@ func main() {
 
 			for _, field := range structType.Fields.List {
 				for _, ident := range field.Names {
-					sdata.Fields = append(sdata.Fields, ident.Name)
+					structTok.Fields = append(structTok.Fields, ident.Name)
 				}
 
 				switch fieldType := field.Type.(type) {
 				case *ast.Ident:
-					sdata.Types = append(sdata.Types, fieldType.Name)
+					structTok.Types = append(structTok.Types, fieldType.Name)
 				case *ast.SelectorExpr:
 					ident, isIdent := fieldType.X.(*ast.Ident)
 					if !isIdent {
 						continue
 					}
 
-					sdata.Types = append(sdata.Types,
+					structTok.Types = append(structTok.Types,
 						fmt.Sprintf("%s.%s", ident.Name, fieldType.Sel.Name))
 				}
 
 			}
 
-			sdatas = append(sdatas, sdata)
+			structToks = append(structToks, structTok)
 		}
 	}
 
-	for _, sd := range sdatas {
+	for _, sd := range structToks {
 		fmt.Println(sd.Name)
 
 		if len(sd.Fields) != len(sd.Types) {
