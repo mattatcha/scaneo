@@ -35,41 +35,40 @@ func main() {
 			Type:  make([]string, 0, 8),
 		}
 
-		decType, isGenDec := dec.(*ast.GenDecl)
+		genDec, isGenDec := dec.(*ast.GenDecl)
 		if !isGenDec {
 			continue
 		}
 
-		for _, spec := range decType.Specs {
-			sp, isTypeSpec := spec.(*ast.TypeSpec)
+		for _, spec := range genDec.Specs {
+			typeSpec, isTypeSpec := spec.(*ast.TypeSpec)
 			if !isTypeSpec {
 				continue
 			}
 
-			sdata.Name = sp.Name.Name
+			sdata.Name = typeSpec.Name.Name
 
-			st, isStructType := sp.Type.(*ast.StructType)
+			structType, isStructType := typeSpec.Type.(*ast.StructType)
 			if !isStructType {
 				continue
 			}
 
-			//  List: []*ast.Field (len = 2)
-			for _, fl := range st.Fields.List {
-				for _, ident := range fl.Names {
+			for _, field := range structType.Fields.List {
+				for _, ident := range field.Names {
 					sdata.Field = append(sdata.Field, ident.Name)
 				}
 
-				switch tp := fl.Type.(type) {
+				switch fieldType := field.Type.(type) {
 				case *ast.Ident:
-					sdata.Type = append(sdata.Type, tp.Name)
+					sdata.Type = append(sdata.Type, fieldType.Name)
 				case *ast.SelectorExpr:
-					ident, isIdent := tp.X.(*ast.Ident)
+					ident, isIdent := fieldType.X.(*ast.Ident)
 					if !isIdent {
 						continue
 					}
 
 					sdata.Type = append(sdata.Type,
-						fmt.Sprintf("%s.%s", ident.Name, tp.Sel.Name))
+						fmt.Sprintf("%s.%s", ident.Name, fieldType.Sel.Name))
 				}
 
 			}
