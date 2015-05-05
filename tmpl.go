@@ -1,7 +1,7 @@
 package main
 
 const (
-	scanStructFunc = `{{range .}}func Scan{{.StructName}}(r *sql.Row) ({{.StructName}}, error) {
+	scanStructFunc = `{{range .Models}}func {{$.Access}}can{{.StructName}}(r *sql.Row) ({{.StructName}}, error) {
 	var s {{.StructName}}
 
 	if err := r.Scan({{range .FieldName}}
@@ -15,7 +15,7 @@ const (
 
 {{end}}`
 
-	scanStructsFunc = `{{range .}}func Scan{{.StructName}}s(rs *sql.Rows) ([]{{.StructName}}, error) {
+	scanStructsFunc = `{{range .Models}}func {{$.Access}}can{{.StructName}}s(rs *sql.Rows) ([]{{.StructName}}, error) {
 	structs := make([]{{.StructName}}, 0, 16)
 
 	var err error
@@ -33,5 +33,6 @@ const (
 
 	return structs, nil
 }
+
 {{end}}`
 )
