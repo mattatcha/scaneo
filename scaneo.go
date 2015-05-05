@@ -1,34 +1,19 @@
 package main
 
 import (
-	"errors"
 	"flag"
 	"fmt"
-	"io/ioutil"
+	"go/ast"
+	"go/parser"
+	"go/token"
 	"log"
 	"os"
 	"path/filepath"
-	"regexp"
 	"strings"
 	"text/template"
 )
 
-const (
-	all = iota
-	name
-	fields
-)
-
-type model struct {
-	StructName string
-	FieldName  []string
-	FieldType  []string
-}
-
 var (
-	structs = regexp.MustCompile(`(?s)type ([a-zA-Z0-9]+) struct ?\{(.*?)\}`)
-	spaces  = regexp.MustCompile(`\s+`)
-
 	structTmpl  = template.Must(template.New("scanStruct").Parse(scanStructFunc))
 	structsTmpl = template.Must(template.New("scanStructs").Parse(scanStructsFunc))
 
@@ -103,27 +88,84 @@ func main() {
 		files = append(files, path)
 	}
 
-	modelInfo := make([]model, 0, 8)
+	structToks := make([]structToken, 0, 8)
 	for _, fname := range files {
-		bs, err := ioutil.ReadFile(fname)
+		toks, err := parseCode(fname)
 		if err != nil {
-			log.Fatalln("couldn't read input:", err)
+			log.Println(`"syntax error" - parser probably`)
+			log.Fatal(err)
 		}
 
-		info, err := parseStructs(bs)
-		if err != nil {
-			log.Fatalln("couldn't parse structs:", err)
-		}
-
-		modelInfo = append(modelInfo, info...)
+		structToks = append(structToks, toks...)
 	}
 
-	if err := writeCode(*packName, *unexport, modelInfo); err != nil {
+	if err := writeCode(*packName, *unexport, structToks); err != nil {
 		log.Fatalln("couldn't write code:", err)
 	}
 }
 
-func writeCode(packName string, unexport bool, modInfo []model) error {
+func parseCode(srcFile string) ([]structToken, error) {
+	structToks := make([]structToken, 0, 8)
+
+	fset := token.NewFileSet()
+	astf, err := parser.ParseFile(fset, srcFile, nil, 0)
+	if err != nil {
+		return nil, err
+	}
+
+	// ast.Print(fset, astf)
+	for _, dec := range astf.Decls {
+		structTok := structToken{
+			Fields: make([]string, 0, 8),
+			Types:  make([]string, 0, 8),
+		}
+
+		genDec, isGenDec := dec.(*ast.GenDecl)
+		if !isGenDec {
+			continue
+		}
+
+		for _, spec := range genDec.Specs {
+			typeSpec, isTypeSpec := spec.(*ast.TypeSpec)
+			if !isTypeSpec {
+				continue
+			}
+
+			structTok.Name = typeSpec.Name.Name
+
+			structType, isStructType := typeSpec.Type.(*ast.StructType)
+			if !isStructType {
+				continue
+			}
+
+			for _, field := range structType.Fields.List {
+				for _, ident := range field.Names {
+					structTok.Fields = append(structTok.Fields, ident.Name)
+				}
+
+				switch fieldType := field.Type.(type) {
+				case *ast.Ident:
+					structTok.Types = append(structTok.Types, fieldType.Name)
+				case *ast.SelectorExpr:
+					ident, isIdent := fieldType.X.(*ast.Ident)
+					if !isIdent {
+						continue
+					}
+
+					structTok.Types = append(structTok.Types,
+						fmt.Sprint(ident.Name, ".", fieldType.Sel.Name))
+				}
+
+			}
+
+			structToks = append(structToks, structTok)
+		}
+	}
+
+	return structToks, nil
+}
+
+func writeCode(packName string, unexport bool, toks []structToken) error {
 	var outfd *os.File
 	var err error
 	var outExists bool
@@ -152,10 +194,10 @@ func writeCode(packName string, unexport bool, modInfo []model) error {
 	}
 
 	data := struct {
-		Models []model
+		Tokens []structToken
 		Access string
 	}{
-		Models: modInfo,
+		Tokens: toks,
 		Access: "S",
 	}
 
@@ -172,35 +214,4 @@ func writeCode(packName string, unexport bool, modInfo []model) error {
 	}
 
 	return nil
-}
-
-func parseStructs(code []byte) ([]model, error) {
-	models := make([]model, 0, 8)
-
-	for _, dec := range structs.FindAllSubmatch(code, -1) {
-		m := model{
-			StructName: string(dec[name]),
-		}
-
-		fs := spaces.ReplaceAllString(string(dec[fields]), " ")
-		fs = fs[1 : len(fs)-1]
-
-		nameValues := strings.Split(fs, " ")
-
-		if len(nameValues)%2 != 0 {
-			return nil, errors.New("Malformed struct declaration.")
-		}
-
-		for i, elem := range nameValues {
-			if i%2 == 0 {
-				m.FieldName = append(m.FieldName, elem)
-			} else {
-				m.FieldType = append(m.FieldType, elem)
-			}
-		}
-
-		models = append(models, m)
-	}
-
-	return models, nil
 }
