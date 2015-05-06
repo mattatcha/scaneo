@@ -26,7 +26,7 @@ func init() {
 	flag.Usage = func() {
 		fmt.Fprintln(os.Stderr, `usage: scaneo [options] paths...
 
-    -c    Clobber (overwrite) file if exists.
+    -c    Clobber (overwrite) file if exists. Default appends to file.
 
     -o    Name of output file. Default is scans.go.
 
