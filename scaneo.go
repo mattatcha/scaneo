@@ -24,7 +24,7 @@ var (
 
 func init() {
 	flag.Usage = func() {
-		fmt.Fprintln(os.Stderr, `Usage: scaneo [options] paths...
+		fmt.Fprintln(os.Stderr, `usage: scaneo [options] paths...
 
     -c    Clobber (overwrite) file if exists.
 

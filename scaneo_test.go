@@ -3,7 +3,7 @@ package main
 import "testing"
 
 func TestFilenames(t *testing.T) {
-	expFiles := 1
+	expFiles := 6
 	dirs := []string{"testdata/"}
 
 	files, err := filenames(dirs)
@@ -20,20 +20,40 @@ func TestFilenames(t *testing.T) {
 
 func TestParseCode(t *testing.T) {
 	files := []string{
-		"testdata/structs.go",
+		"testdata/amet.go",
+		"testdata/consectetur.go",
+		"testdata/dolor.go",
+		"testdata/ipsum.go",
+		"testdata/lorem.go",
+		"testdata/sit.go",
 	}
 
 	structCnt := []int{
-		6,
+		1,
+		1,
+		1,
+		1,
+		1,
+		1,
 	}
 
 	fieldsCnt := [][]int{
 		[]int{
 			0,
+		},
+		[]int{
 			1,
+		},
+		[]int{
 			17,
+		},
+		[]int{
 			4,
+		},
+		[]int{
 			3,
+		},
+		[]int{
 			3,
 		},
 	}
