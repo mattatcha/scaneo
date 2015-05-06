@@ -158,6 +158,14 @@ func parseCode(srcFile string) ([]structToken, error) {
 
 					structTok.Types = append(structTok.Types,
 						fmt.Sprint(ident.Name, ".", fieldType.Sel.Name))
+				case *ast.ArrayType:
+					ident, isIdent := fieldType.Elt.(*ast.Ident)
+					if !isIdent {
+						continue
+					}
+
+					structTok.Types = append(structTok.Types,
+						fmt.Sprint("[]", ident.Name))
 				}
 
 			}
