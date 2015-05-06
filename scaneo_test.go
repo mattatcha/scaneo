@@ -31,7 +31,7 @@ func TestParseCode(t *testing.T) {
 
 	structCnt := []int{
 		1,
-		1,
+		3,
 		1,
 		1,
 		1,
@@ -45,6 +45,8 @@ func TestParseCode(t *testing.T) {
 		},
 		[]int{
 			0,
+			1,
+			1,
 		},
 		[]int{
 			1,
