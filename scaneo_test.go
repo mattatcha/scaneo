@@ -2,6 +2,22 @@ package main
 
 import "testing"
 
+func TestFilenames(t *testing.T) {
+	expFiles := 1
+	dirs := []string{"testdata/"}
+
+	files, err := filenames(dirs)
+	if err != nil {
+		t.Error(err)
+	}
+
+	if len(files) != expFiles {
+		t.Error("actual files found differs from expected")
+		t.Errorf("%d != %d", len(files), expFiles)
+	}
+
+}
+
 func TestParseCode(t *testing.T) {
 	files := []string{
 		"testdata/structs.go",
