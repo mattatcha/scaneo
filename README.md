@@ -50,11 +50,10 @@ type Post struct {
 	Author      string
 	Image       []byte
 }
-
 ```
 
-If you run `scaneo tables.go`, then a new file called `scans.go` will be
-generated. `scans.go` will look like this.
+Run `scaneo tables.go` and this will generate a new file called `scans.go`.
+`scans.go` will look like this.
 
 ```
 package models
@@ -115,13 +114,31 @@ func ScanPosts(rs *sql.Rows) ([]Post, error) {
 
 	return structs, nil
 }
+```
 
+Then you can call those functions from other code, like this.
+
+```
+func serveHome(resp http.ResponseWriter, req *http.Request) {
+	rows, err := db.Query("select * from post")
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	posts, err := models.ScanPosts(rows)
+	if err != nil {
+		log.Println(err)
+	}
+
+	// ... send posts to template or whatever...
+}
 ```
 
 ### Go Generate
 
 You can integrate `scaneo` with `go generate` by adding the generate comment to
-the beginning of `tables.go`, like this. `$GOFILE` is the name of the current
+the beginning of `tables.go`. `$GOFILE` is the name of the current
 file, in this case, `tables.go`.
 
 ```
