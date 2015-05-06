@@ -46,7 +46,7 @@ type Post struct {
 	IsPage      bool
 	IsPublished bool
 	Date        *time.Time
-	Tags        []string
+	Tags        []byte
 	Author      string
 	Image       []byte
 }
