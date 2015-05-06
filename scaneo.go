@@ -158,6 +158,19 @@ func parseCode(srcFile string) ([]structToken, error) {
 
 					structTok.Types = append(structTok.Types,
 						fmt.Sprint(ident.Name, ".", fieldType.Sel.Name))
+				case *ast.StarExpr:
+					selExp, isSelector := fieldType.X.(*ast.SelectorExpr)
+					if !isSelector {
+						continue
+					}
+
+					ident, isIdent := selExp.X.(*ast.Ident)
+					if !isIdent {
+						continue
+					}
+
+					structTok.Types = append(structTok.Types,
+						fmt.Sprint("*", ident.Name, ".", selExp.Sel.Name))
 				case *ast.ArrayType:
 					ident, isIdent := fieldType.Elt.(*ast.Ident)
 					if !isIdent {
