@@ -4,9 +4,9 @@
 
 Generate code to convert `*sql.Row` and `*sql.Rows` into arbitrary structs.
 Works with any database driver. Don't have to worry about database columns
-and struct names matching. No reflection.
+and struct names matching. No reflection. No ORM magic.
 
-For people who know SQL and only need `sql.QueryRow` and `sql.Query`.
+For people who know SQL and only want `sql.QueryRow` and `sql.Query`.
 
 ## Installation
 
