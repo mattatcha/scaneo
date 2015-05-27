@@ -25,7 +25,7 @@ var (
 	packName    = flag.String("p", "current directory", "")
 	unexport    = flag.Bool("u", false, "")
 	version     = flag.Bool("v", false, "")
-	help        bool
+	help        = flag.Bool("h", false, "")
 )
 
 func init() {
@@ -33,10 +33,11 @@ func init() {
 	flag.StringVar(packName, "package", "current directory", "")
 	flag.BoolVar(unexport, "unexport", false, "")
 	flag.BoolVar(version, "version", false, "")
-	flag.BoolVar(&help, "help", false, "")
+	flag.BoolVar(help, "help", false, "")
+}
 
-	flag.Usage = func() {
-		fmt.Fprintln(os.Stderr, `SCANEO
+func usage(fd *os.File) {
+	fmt.Fprint(fd, `SCANEO
     Generate code to get structs back from a database.
 
 USAGE
@@ -58,17 +59,45 @@ OPTIONS
 
     -h, -help
         Print help and exit.
+
+EXAMPLES
+    models.go is a file that contains one or more struct declarations.
+
+    Generate scan functions from a file filled with struct declarations.
+        scaneo models.go
+
+    Generate scan functions and name the file funcs.go
+        scaneo -o funcs.go models.go
+
+    Generate unexported scan functions.
+        scaneo -u models.go
+
+NOTES
+    Struct field names don't have to match database column names at all.
+    However, the order of the types must match.
+
+    Integrate this with go generate by adding this line to your models.go file.
+        //go:generate scaneo -c $GOFILE
 `)
-	}
 }
 
 func main() {
 	flag.Parse()
 
+	if *help {
+		usage(os.Stdout)
+		return
+	}
+
+	if *version {
+		fmt.Println("scaneo version 1.0.0")
+		return
+	}
+
 	inputPaths := flag.Args()
 	if len(inputPaths) == 0 {
 		log.Println("missing input paths")
-		flag.Usage()
+		usage(os.Stderr)
 		os.Exit(1)
 	}
 
