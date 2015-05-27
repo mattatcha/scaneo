@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"text/template"
+	"unicode"
 )
 
 const (
@@ -238,8 +239,15 @@ func writeCode(fout *os.File, packName string, unexport bool, toks []structToken
 		Tokens []structToken
 		Access string
 	}{
-		Tokens: toks,
+		Tokens: make([]structToken, len(toks)),
 		Access: "S",
+	}
+
+	// make funcs scanFoo or ScanFoo, but not scanfoo or Scanfoo
+	for i := range toks {
+		data.Tokens[i] = toks[i]
+		data.Tokens[i].Name = string(unicode.ToTitle(rune(toks[i].Name[0]))) +
+			toks[i].Name[1:]
 	}
 
 	if unexport {

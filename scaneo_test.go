@@ -111,6 +111,12 @@ func TestWriteCode(t *testing.T) {
 			Types:  []string{"string", "string", "string"},
 		},
 	}
+	expectedScanNames := []string{
+		"scanLorem",
+		"scanSit",
+		"scanLorems",
+		"scanSits",
+	}
 
 	fout, err := ioutil.TempFile(os.TempDir(), "scaneo-test-")
 	if err != nil {
@@ -145,5 +151,13 @@ func TestWriteCode(t *testing.T) {
 	if len(toks)*2 != len(scanFuncs) {
 		t.Error("unexpected number of scan functions found")
 		t.Errorf("expected: %d; found: %d\n", len(toks)*2, len(scanFuncs))
+		t.SkipNow()
+	}
+
+	for i := range expectedScanNames {
+		if expectedScanNames[i] != scanFuncs[i] {
+			t.Error("unexpected scan function found")
+			t.Errorf("expected: %s; found: %s\n", expectedScanNames[i], scanFuncs[i])
+		}
 	}
 }
