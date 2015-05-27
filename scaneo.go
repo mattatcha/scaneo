@@ -38,7 +38,7 @@ func init() {
 
 func usage(fd *os.File) {
 	fmt.Fprint(fd, `SCANEO
-    Generate code to get structs back from a database.
+    Generate Go code to convert database rows into arbitrary structs.
 
 USAGE
     scaneo [options] paths...
@@ -61,23 +61,24 @@ OPTIONS
         Print help and exit.
 
 EXAMPLES
-    models.go is a file that contains one or more struct declarations.
+    tables.go is a file that contains one or more struct declarations.
 
     Generate scan functions from a file filled with struct declarations.
-        scaneo models.go
+        scaneo tables.go
 
     Generate scan functions and name the file funcs.go
-        scaneo -o funcs.go models.go
+        scaneo -o funcs.go tables.go
 
     Generate unexported scan functions.
-        scaneo -u models.go
+        scaneo -u tables.go
 
 NOTES
     Struct field names don't have to match database column names at all.
     However, the order of the types must match.
 
-    Integrate this with go generate by adding this line to your models.go file.
-        //go:generate scaneo -c $GOFILE
+    Integrate this with go generate by adding this line to the top of your
+    tables.go file.
+        //go:generate scaneo $GOFILE
 `)
 }
 
