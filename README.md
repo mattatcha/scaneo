@@ -4,7 +4,7 @@
 
 Generate Go code to convert database rows into arbitrary structs.
 Works with any database driver. Don't have to worry about database columns
-and struct names matching or taggings structs. No reflection. No ORM magic.
+and struct names matching or tagging structs. No reflection. No ORM magic.
 
 ## Installation
 If you have Go installed, then do this.
@@ -40,7 +40,7 @@ scaneo [options] paths...
 ```
 
 ## Quick Tutorial
-Let's say you have a file called `tables.go` that looks like this.
+1. We start with a file that looks like this, called `tables.go`.
 ```go
 package models
 
@@ -60,7 +60,7 @@ type Post struct {
 }
 ```
 
-Next, run `scaneo tables.go`. This will create a new file called `scans.go`.
+2. Next, run `scaneo tables.go`. This will create a new file called `scans.go`.
 It looks like this.
 
 ```go
@@ -112,7 +112,7 @@ func ScanPosts(rs *sql.Rows) ([]Post, error) {
 }
 ```
 
-Now you can call those functions from other parts of your code.
+3. Now you can call those functions from other parts of your code.
 ```go
 func serveHome(resp http.ResponseWriter, req *http.Request) {
 	rows, err := db.Query("select * from post")
