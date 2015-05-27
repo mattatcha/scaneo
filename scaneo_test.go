@@ -1,19 +1,26 @@
 package main
 
-import "testing"
+import (
+	"go/ast"
+	"go/parser"
+	"go/token"
+	"io/ioutil"
+	"os"
+	"testing"
+)
 
 func TestFilenames(t *testing.T) {
 	expFiles := 7
-	dirs := []string{"testdata/", "testdata/adipiscing.go"}
+	paths := []string{"testdata/", "testdata/adipiscing.go"}
 
-	files, err := filenames(dirs)
+	files, err := filenames(paths)
 	if err != nil {
 		t.Error(err)
 	}
 
 	if len(files) != expFiles {
 		t.Error("actual files found differs from expected")
-		t.Errorf("%d != %d", len(files), expFiles)
+		t.Errorf("expected: %d; found: %d\n", expFiles, len(files))
 	}
 }
 
@@ -68,6 +75,7 @@ func TestParseCode(t *testing.T) {
 		toks, err := parseCode(f)
 		if err != nil {
 			t.Error(err)
+			continue
 		}
 
 		if len(toks) != structCnt[i] {
@@ -87,5 +95,55 @@ func TestParseCode(t *testing.T) {
 				t.Errorf("%d != %d", len(tok.Fields), fieldsCnt[i][j])
 			}
 		}
+	}
+}
+
+func TestWriteCode(t *testing.T) {
+	toks := []structToken{
+		structToken{
+			Name:   "lorem",
+			Fields: []string{"a", "b", "C"},
+			Types:  []string{"int", "int", "int"},
+		},
+		structToken{
+			Name:   "Sit",
+			Fields: []string{"A", "b", "c"},
+			Types:  []string{"string", "string", "string"},
+		},
+	}
+
+	fout, err := ioutil.TempFile(os.TempDir(), "scaneo-test-")
+	if err != nil {
+		t.Error(err)
+		t.SkipNow()
+	}
+	defer os.Remove(fout.Name())
+	defer fout.Close()
+
+	if err := writeCode(fout, "testing", true, toks); err != nil {
+		t.Error(err)
+		t.SkipNow()
+	}
+
+	fset := token.NewFileSet()
+	astf, err := parser.ParseFile(fset, fout.Name(), nil, 0)
+	if err != nil {
+		t.Error(err)
+		t.SkipNow()
+	}
+
+	scanFuncs := make([]string, 0, len(toks))
+	for _, dec := range astf.Decls {
+		funcDecl, isFuncDecl := dec.(*ast.FuncDecl)
+		if !isFuncDecl {
+			continue
+		}
+
+		scanFuncs = append(scanFuncs, funcDecl.Name.String())
+	}
+
+	if len(toks)*2 != len(scanFuncs) {
+		t.Error("unexpected number of scan functions found")
+		t.Errorf("expected: %d; found: %d\n", len(toks)*2, len(scanFuncs))
 	}
 }
