@@ -4,7 +4,7 @@ import "testing"
 
 func TestFilenames(t *testing.T) {
 	expFiles := 7
-	dirs := []string{"testdata/"}
+	dirs := []string{"testdata/", "testdata/adipiscing.go"}
 
 	files, err := filenames(dirs)
 	if err != nil {
@@ -15,7 +15,6 @@ func TestFilenames(t *testing.T) {
 		t.Error("actual files found differs from expected")
 		t.Errorf("%d != %d", len(files), expFiles)
 	}
-
 }
 
 func TestParseCode(t *testing.T) {

@@ -88,14 +88,14 @@ func filenames(paths []string) ([]string, error) {
 		}
 
 		if info.IsDir() {
-			filepath.Walk(path, func(wPath string, wInfo os.FileInfo, _ error) error {
-				if wInfo.IsDir() {
+			filepath.Walk(path, func(startDir string, subInfo os.FileInfo, _ error) error {
+				if subInfo.IsDir() {
 					return nil
-				} else if wInfo.Name()[0] == '.' {
+				} else if subInfo.Name()[0] == '.' {
 					return nil
 				}
 
-				files = append(files, wPath)
+				files = append(files, startDir)
 				return nil
 			})
 
@@ -105,7 +105,17 @@ func filenames(paths []string) ([]string, error) {
 		files = append(files, path)
 	}
 
-	return files, nil
+	fileSet := make(map[string]struct{})
+	for _, f := range files {
+		fileSet[f] = struct{}{}
+	}
+
+	deduped := make([]string, 0, len(fileSet))
+	for f := range fileSet {
+		deduped = append(deduped, f)
+	}
+
+	return deduped, nil
 }
 
 func parseCode(srcFile string) ([]structToken, error) {
