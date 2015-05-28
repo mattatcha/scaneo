@@ -13,26 +13,8 @@ import (
 	"unicode"
 )
 
-var (
-	scansTmpl = template.Must(template.New("scans").Parse(scansText))
-
-	outFilename = flag.String("o", "scans.go", "")
-	packName    = flag.String("p", "current directory", "")
-	unexport    = flag.Bool("u", false, "")
-	version     = flag.Bool("v", false, "")
-	help        = flag.Bool("h", false, "")
-)
-
-func init() {
-	flag.StringVar(outFilename, "output", "scans.go", "")
-	flag.StringVar(packName, "package", "current directory", "")
-	flag.BoolVar(unexport, "unexport", false, "")
-	flag.BoolVar(version, "version", false, "")
-	flag.BoolVar(help, "help", false, "")
-}
-
-func usage(fd *os.File) {
-	fmt.Fprint(fd, `SCANEO
+const (
+	usageText = `SCANEO
     Generate Go code to convert database rows into arbitrary structs.
 
 USAGE
@@ -74,14 +56,37 @@ NOTES
     Integrate this with go generate by adding this line to the top of your
     tables.go file.
         //go:generate scaneo $GOFILE
-`)
+`
+)
+
+var (
+	scansTmpl = template.Must(template.New("scans").Parse(scansText))
+
+	outFilename = flag.String("o", "scans.go", "")
+	packName    = flag.String("p", "current directory", "")
+	unexport    = flag.Bool("u", false, "")
+	version     = flag.Bool("v", false, "")
+	help        = flag.Bool("h", false, "")
+)
+
+func init() {
+	flag.StringVar(outFilename, "output", "scans.go", "")
+	flag.StringVar(packName, "package", "current directory", "")
+	flag.BoolVar(unexport, "unexport", false, "")
+	flag.BoolVar(version, "version", false, "")
+	flag.BoolVar(help, "help", false, "")
+
+	flag.Usage = func() {
+		log.Println(usageText)
+	}
 }
 
 func main() {
+	log.SetFlags(0)
 	flag.Parse()
 
 	if *help {
-		usage(os.Stdout)
+		fmt.Println(usageText)
 		return
 	}
 
@@ -93,7 +98,7 @@ func main() {
 	inputPaths := flag.Args()
 	if len(inputPaths) == 0 {
 		log.Println("missing input paths")
-		usage(os.Stderr)
+		log.Println(usageText)
 		os.Exit(1)
 	}
 
@@ -128,8 +133,8 @@ func main() {
 	}
 	defer fout.Close()
 
-	if err := writeCode(fout, *packName, *unexport, structToks); err != nil {
-		log.Fatalln("couldn't write code:", err)
+	if err := genFile(fout, *packName, *unexport, structToks); err != nil {
+		log.Fatalln("couldn't generate file:", err)
 	}
 }
 
@@ -183,18 +188,18 @@ func parseCode(srcFile string) ([]structToken, error) {
 	}
 
 	// ast.Print(fset, astf)
-	for _, dec := range astf.Decls {
+	for _, decl := range astf.Decls {
 		structTok := structToken{
 			Fields: make([]string, 0, 8),
 			Types:  make([]string, 0, 8),
 		}
 
-		genDec, isGenDec := dec.(*ast.GenDecl)
-		if !isGenDec {
+		genDecl, isGenDecl := decl.(*ast.GenDecl)
+		if !isGenDecl {
 			continue
 		}
 
-		for _, spec := range genDec.Specs {
+		for _, spec := range genDecl.Specs {
 			typeSpec, isTypeSpec := spec.(*ast.TypeSpec)
 			if !isTypeSpec {
 				continue
@@ -255,18 +260,18 @@ func parseCode(srcFile string) ([]structToken, error) {
 	return structToks, nil
 }
 
-func writeCode(fout *os.File, packName string, unexport bool, toks []structToken) error {
+func genFile(fout *os.File, pkg string, unexport bool, toks []structToken) error {
 	data := struct {
 		PackageName string
 		Tokens      []structToken
 		Access      string
 	}{
-		PackageName: packName,
+		PackageName: pkg,
 		Tokens:      make([]structToken, len(toks)),
 		Access:      "S",
 	}
 
-	// make funcs scanFoo or ScanFoo, but not scanfoo or Scanfoo
+	// make funcs scanFoo or ScanFoo, never scanfoo or Scanfoo
 	for i := range toks {
 		data.Tokens[i] = toks[i]
 		data.Tokens[i].Name = string(unicode.ToTitle(rune(toks[i].Name[0]))) +
