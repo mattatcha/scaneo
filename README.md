@@ -1,6 +1,6 @@
 # scaneo
-
 [![Build Status](https://drone.io/github.com/variadico/scaneo/status.png)](https://drone.io/github.com/variadico/scaneo/latest)
+[![Coverage Status](https://coveralls.io/repos/variadico/scaneo/badge.svg?branch=master)](https://coveralls.io/r/variadico/scaneo?branch=master)
 
 Generate Go code to convert database rows into arbitrary structs.
 Works with any database driver. Don't have to worry about database columns
@@ -71,7 +71,6 @@ import "database/sql"
 
 func ScanPost(r *sql.Row) (Post, error) {
 	var s Post
-
 	if err := r.Scan(
 		&s.ID,
 		&s.Created,
@@ -82,17 +81,13 @@ func ScanPost(r *sql.Row) (Post, error) {
 	); err != nil {
 		return Post{}, err
 	}
-
 	return s, nil
 }
-
 func ScanPosts(rs *sql.Rows) ([]Post, error) {
 	structs := make([]Post, 0, 16)
-
 	var err error
 	for rs.Next() {
 		var s Post
-
 		if err = rs.Scan(
 			&s.ID,
 			&s.Created,
@@ -103,10 +98,8 @@ func ScanPosts(rs *sql.Rows) ([]Post, error) {
 		); err != nil {
 			return nil, err
 		}
-
 		structs = append(structs, s)
 	}
-
 	return structs, nil
 }
 ```
