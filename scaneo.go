@@ -59,6 +59,12 @@ NOTES
 `
 )
 
+type structToken struct {
+	Name   string
+	Fields []string
+	Types  []string
+}
+
 var (
 	scansTmpl = template.Must(template.New("scans").Parse(scansText))
 
