@@ -98,7 +98,7 @@ func TestParseCode(t *testing.T) {
 	}
 }
 
-func TestWriteCode(t *testing.T) {
+func TestGenFile(t *testing.T) {
 	toks := []structToken{
 		structToken{
 			Name:   "lorem",
@@ -126,7 +126,7 @@ func TestWriteCode(t *testing.T) {
 	defer os.Remove(fout.Name()) // comment this line to examin generated code
 	defer fout.Close()
 
-	if err := writeCode(fout, "testing", true, toks); err != nil {
+	if err := genFile(fout, "testing", true, toks); err != nil {
 		t.Error(err)
 		t.SkipNow()
 	}
