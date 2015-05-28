@@ -123,7 +123,7 @@ func TestWriteCode(t *testing.T) {
 		t.Error(err)
 		t.SkipNow()
 	}
-	defer os.Remove(fout.Name())
+	defer os.Remove(fout.Name()) // comment this line to examin generated code
 	defer fout.Close()
 
 	if err := writeCode(fout, "testing", true, toks); err != nil {
