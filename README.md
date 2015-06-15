@@ -32,6 +32,10 @@ scaneo [options] paths...
 -u, -unexport
     Generate unexported functions. Default is export all.
 
+-w, -white-list
+    Only include structs specified in case-sensitive, comma-delimited
+    string.
+
 -v, -version
     Print version and exit.
 
