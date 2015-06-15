@@ -9,6 +9,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 	"text/template"
 	"unicode"
 )
@@ -31,6 +32,10 @@ OPTIONS
     -u, -unexport
         Generate unexported functions. Default is export all.
 
+    -w, -white-list
+        Only include structs specified in case-sensitive, comma-delimited
+        string.
+
     -v, -version
         Print version and exit.
 
@@ -40,14 +45,17 @@ OPTIONS
 EXAMPLES
     tables.go is a file that contains one or more struct declarations.
 
-    Generate scan functions from a file filled with struct declarations.
+    Generate scan functions based on structs in tables.go.
         scaneo tables.go
 
-    Generate scan functions and name the file funcs.go
+    Generate scan functions and name the output file funcs.go
         scaneo -o funcs.go tables.go
 
-    Generate unexported scan functions.
+    Generate scans.go with unexported functions.
         scaneo -u tables.go
+
+    Generate scans.go with only struct Post and struct user.
+        scaneo -w "Post,user" tables.go
 
 NOTES
     Struct field names don't have to match database column names at all.
@@ -71,6 +79,7 @@ var (
 	outFilename = flag.String("o", "scans.go", "")
 	packName    = flag.String("p", "current directory", "")
 	unexport    = flag.Bool("u", false, "")
+	whiteList   = flag.String("w", "", "")
 	version     = flag.Bool("v", false, "")
 	help        = flag.Bool("h", false, "")
 )
@@ -79,6 +88,7 @@ func init() {
 	flag.StringVar(outFilename, "output", "scans.go", "")
 	flag.StringVar(packName, "package", "current directory", "")
 	flag.BoolVar(unexport, "unexport", false, "")
+	flag.StringVar(whiteList, "white-list", "", "")
 	flag.BoolVar(version, "version", false, "")
 	flag.BoolVar(help, "help", false, "")
 
@@ -97,7 +107,7 @@ func main() {
 	}
 
 	if *version {
-		fmt.Println("scaneo version 1.0.0")
+		fmt.Println("scaneo version 1.1.0")
 		return
 	}
 
@@ -122,9 +132,15 @@ func main() {
 		log.Fatalln("couldn't get filenames:", err)
 	}
 
+	wSplits := strings.Split(*whiteList, ",")
+	whiteList := make(map[string]struct{}, len(wSplits))
+	for _, s := range wSplits {
+		whiteList[s] = struct{}{}
+	}
+
 	structToks := make([]structToken, 0, 8)
 	for _, file := range files {
-		toks, err := parseCode(file)
+		toks, err := parseCode(file, whiteList)
 		if err != nil {
 			log.Println(`"syntax error" - parser probably`)
 			log.Fatal(err)
@@ -184,13 +200,18 @@ func filenames(paths []string) ([]string, error) {
 	return deduped, nil
 }
 
-func parseCode(srcFile string) ([]structToken, error) {
+func parseCode(srcFile string, iSplits map[string]struct{}) ([]structToken, error) {
 	structToks := make([]structToken, 0, 8)
 
 	fset := token.NewFileSet()
 	astf, err := parser.ParseFile(fset, srcFile, nil, 0)
 	if err != nil {
 		return nil, err
+	}
+
+	var filter bool
+	if len(iSplits) > 0 {
+		filter = true
 	}
 
 	// ast.Print(fset, astf)
@@ -211,7 +232,14 @@ func parseCode(srcFile string) ([]structToken, error) {
 				continue
 			}
 
-			structTok.Name = typeSpec.Name.Name
+			// filter, if necessary
+			if !filter {
+				structTok.Name = typeSpec.Name.Name
+			} else if _, exists := iSplits[typeSpec.Name.Name]; filter && !exists {
+				continue
+			} else if filter && exists {
+				structTok.Name = typeSpec.Name.Name
+			}
 
 			structType, isStructType := typeSpec.Type.(*ast.StructType)
 			if !isStructType {
