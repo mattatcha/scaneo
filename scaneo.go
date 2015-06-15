@@ -149,6 +149,12 @@ func main() {
 		structToks = append(structToks, toks...)
 	}
 
+	if len(structToks) < 1 {
+		log.Println("heads up! no structs found")
+		log.Println("aborting")
+		os.Exit(1)
+	}
+
 	fout, err := os.Create(*outFilename)
 	if err != nil {
 		log.Fatal(err)
