@@ -32,7 +32,7 @@ OPTIONS
     -u, -unexport
         Generate unexported functions. Default is export all.
 
-    -w, -white-list
+    -w, -whitelist
         Only include structs specified in case-sensitive, comma-delimited
         string.
 
@@ -88,7 +88,7 @@ func init() {
 	flag.StringVar(outFilename, "output", "scans.go", "")
 	flag.StringVar(packName, "package", "current directory", "")
 	flag.BoolVar(unexport, "unexport", false, "")
-	flag.StringVar(whiteList, "white-list", "", "")
+	flag.StringVar(whiteList, "whitelist", "", "")
 	flag.BoolVar(version, "version", false, "")
 	flag.BoolVar(help, "help", false, "")
 
