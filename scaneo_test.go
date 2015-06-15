@@ -71,8 +71,9 @@ func TestParseCode(t *testing.T) {
 		},
 	}
 
+	noFilter := make(map[string]struct{})
 	for i, f := range files {
-		toks, err := parseCode(f)
+		toks, err := parseCode(f, noFilter)
 		if err != nil {
 			t.Error(err)
 			continue
@@ -95,6 +96,24 @@ func TestParseCode(t *testing.T) {
 				t.Errorf("%d != %d", len(tok.Fields), fieldsCnt[i][j])
 			}
 		}
+	}
+}
+
+func TestWhiteList(t *testing.T) {
+	whiteList := map[string]struct{}{
+		"foo":  struct{}{},
+		"Fizz": struct{}{},
+	}
+
+	toks, err := parseCode("testdata/amet.go", whiteList)
+	if err != nil {
+		t.Error(err)
+		t.SkipNow()
+	}
+
+	if len(toks) != 2 {
+		t.Error("unexpected struct tokens")
+		t.Errorf("expected: %d; found: %d\n", 2, len(toks))
 	}
 }
 
