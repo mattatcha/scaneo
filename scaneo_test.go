@@ -99,13 +99,13 @@ func TestParseCode(t *testing.T) {
 	}
 }
 
-func TestWhiteList(t *testing.T) {
-	whiteList := map[string]struct{}{
+func TestWhitelist(t *testing.T) {
+	whitelist := map[string]struct{}{
 		"foo":  struct{}{},
 		"Fizz": struct{}{},
 	}
 
-	toks, err := parseCode("testdata/amet.go", whiteList)
+	toks, err := parseCode("testdata/amet.go", whitelist)
 	if err != nil {
 		t.Error(err)
 		t.SkipNow()
