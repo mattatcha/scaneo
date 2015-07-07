@@ -4,7 +4,7 @@
 
 Generate Go code to convert database rows into arbitrary structs.
 Works with any database driver. Don't have to worry about database columns
-and struct names matching or tagging structs. No reflection. No ORM magic.
+and struct names matching or tagging structs. No ORM magic.
 
 ## Installation
 If you have Go installed, then do this.
