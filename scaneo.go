@@ -261,6 +261,7 @@ func parseCode(srcFile string, wlist map[string]struct{}) ([]structToken, error)
 
 				switch fieldType := field.Type.(type) {
 				case *ast.Ident:
+					// e.g int, bool, string
 					structTok.Types = append(structTok.Types, fieldType.Name)
 				case *ast.SelectorExpr:
 					ident, isIdent := fieldType.X.(*ast.Ident)
@@ -268,6 +269,7 @@ func parseCode(srcFile string, wlist map[string]struct{}) ([]structToken, error)
 						continue
 					}
 
+					// e.g time.Time, sql.NullString
 					structTok.Types = append(structTok.Types,
 						fmt.Sprint(ident.Name, ".", fieldType.Sel.Name))
 				case *ast.StarExpr:
@@ -281,6 +283,7 @@ func parseCode(srcFile string, wlist map[string]struct{}) ([]structToken, error)
 						continue
 					}
 
+					// e.g *time.Time, *sql.NullString
 					structTok.Types = append(structTok.Types,
 						fmt.Sprint("*", ident.Name, ".", selExp.Sel.Name))
 				case *ast.ArrayType:
@@ -289,6 +292,7 @@ func parseCode(srcFile string, wlist map[string]struct{}) ([]structToken, error)
 						continue
 					}
 
+					// e.g []byte
 					structTok.Types = append(structTok.Types,
 						fmt.Sprint("[]", ident.Name))
 				}
