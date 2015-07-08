@@ -309,16 +309,17 @@ func genFile(fout *os.File, pkg string, unexport bool, toks []structToken) error
 		Access      string
 	}{
 		PackageName: pkg,
-		Tokens:      make([]structToken, len(toks)),
 		Access:      "S",
 	}
 
-	// make funcs scanFoo or ScanFoo, never scanfoo or Scanfoo
+	// always capitalize the first letter of struct types so camel case is
+	// correct, e.g. scanFoo or ScanFoo, but never scanfoo or Scanfoo
 	for i := range toks {
-		data.Tokens[i] = toks[i]
-		data.Tokens[i].Name = string(unicode.ToTitle(rune(toks[i].Name[0]))) +
+		toks[i].Name = string(unicode.ToTitle(rune(toks[i].Name[0]))) +
 			toks[i].Name[1:]
 	}
+
+	data.Tokens = toks
 
 	if unexport {
 		data.Access = "s"
