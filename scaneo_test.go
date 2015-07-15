@@ -10,8 +10,8 @@ import (
 )
 
 func TestFilenames(t *testing.T) {
-	expFiles := 7
-	paths := []string{"testdata/", "testdata/adipiscing.go"}
+	expFiles := 4
+	paths := []string{"testdata/", "testdata/access.go"}
 
 	files, err := filenames(paths)
 	if err != nil {
@@ -26,48 +26,43 @@ func TestFilenames(t *testing.T) {
 
 func TestParseCode(t *testing.T) {
 	files := []string{
-		"testdata/adipiscing.go",
-		"testdata/amet.go",
-		"testdata/consectetur.go",
-		"testdata/dolor.go",
-		"testdata/ipsum.go",
-		"testdata/lorem.go",
-		"testdata/sit.go",
+		"testdata/access.go",
+		"testdata/declarations.go",
+		"testdata/methods.go",
+		"testdata/types.go",
 	}
 
 	structCnt := []int{
+		4,
+		5,
 		1,
-		3,
-		1,
-		1,
-		1,
-		1,
-		1,
+		6,
 	}
 
 	fieldsCnt := [][]int{
 		[]int{
-			5,
+			2,
+			2,
+			2,
+			2,
 		},
 		[]int{
-			0,
-			1,
-			1,
+			2,
+			2,
+			2,
+			6,
+			2,
+		},
+		[]int{
+			8,
 		},
 		[]int{
 			1,
-		},
-		[]int{
 			17,
-		},
-		[]int{
-			4,
-		},
-		[]int{
+			1,
 			3,
-		},
-		[]int{
 			3,
+			5,
 		},
 	}
 
@@ -80,20 +75,28 @@ func TestParseCode(t *testing.T) {
 		}
 
 		if len(toks) != structCnt[i] {
+			t.Error("file:", f)
 			t.Error("actual token count differs from expected count")
 			t.Errorf("%d != %d", len(toks), structCnt[i])
+			t.SkipNow()
 		}
 
 		for j, tok := range toks {
 			if len(tok.Fields) != len(tok.Types) {
+				t.Error("file:", f)
 				t.Error("field names and field types don't align")
 				t.Errorf("%d != %d", len(tok.Fields), len(tok.Types))
+				t.SkipNow()
 			}
 
 			if len(tok.Fields) != fieldsCnt[i][j] {
-				t.Errorf("struct %d", j+1)
+				t.Error("file:", f)
+				t.Errorf("struct %d", i)
+				t.Errorf("field %d", j)
 				t.Error("actual struct field count and expect count differ")
 				t.Errorf("%d != %d", len(tok.Fields), fieldsCnt[i][j])
+				t.Errorf("%+v", tok)
+				t.SkipNow()
 			}
 		}
 	}
@@ -101,11 +104,11 @@ func TestParseCode(t *testing.T) {
 
 func TestWhitelist(t *testing.T) {
 	whitelist := map[string]struct{}{
-		"foo":  struct{}{},
-		"Fizz": struct{}{},
+		"Exported":   struct{}{},
+		"unexported": struct{}{},
 	}
 
-	toks, err := parseCode("testdata/amet.go", whitelist)
+	toks, err := parseCode("testdata/access.go", whitelist)
 	if err != nil {
 		t.Error(err)
 		t.SkipNow()
