@@ -195,6 +195,10 @@ func filenames(paths []string) ([]string, error) {
 		files = append(files, path)
 	}
 
+	// file list needs to be deduped in case of
+	// scaneo foo.go foo.go
+	// scaneo somedir/ somedir/foo.go
+	// and because it wouldn't make sense to generate code for the same struct twice
 	fileMap := make(map[string]struct{})
 	for _, f := range files {
 		fileMap[f] = struct{}{}
@@ -317,7 +321,8 @@ func genFile(fout *os.File, pkg string, unexport bool, toks []structToken) error
 	}
 
 	// always capitalize the first letter of struct types so camel case is
-	// correct, e.g. scanFoo or ScanFoo, but never scanfoo or Scanfoo
+	// correct, e.g. if struct is foo, then generate scanFoo or ScanFoo, but
+	// never scanfoo or Scanfoo
 	for i := range toks {
 		toks[i].Name = string(unicode.ToTitle(rune(toks[i].Name[0]))) +
 			toks[i].Name[1:]
