@@ -67,10 +67,14 @@ NOTES
 `
 )
 
+type fieldToken struct {
+	Name string
+	Type string
+}
+
 type structToken struct {
 	Name   string
-	Fields []string
-	Types  []string
+	Fields []fieldToken
 }
 
 var (
@@ -92,7 +96,12 @@ func init() {
 	flag.BoolVar(version, "version", false, "")
 	flag.BoolVar(help, "help", false, "")
 
+	// if err, send usage to stderr
+	// if not err, send usage to stdout
+	// that way people can: scaneo -h | less
+
 	flag.Usage = func() {
+		// an error happened, send to stderr
 		log.Println(usageText)
 	}
 }
@@ -102,6 +111,7 @@ func main() {
 	flag.Parse()
 
 	if *help {
+		// not an error, send to stdout
 		fmt.Println(usageText)
 		return
 	}
@@ -225,8 +235,7 @@ func parseCode(srcFile string, wlist map[string]struct{}) ([]structToken, error)
 	// ast.Print(fset, astf)
 	for _, decl := range astf.Decls {
 		structTok := structToken{
-			Fields: make([]string, 0, 8),
-			Types:  make([]string, 0, 8),
+			Fields: make([]fieldToken, 0, 8),
 		}
 
 		genDecl, isGenDecl := decl.(*ast.GenDecl)
@@ -255,14 +264,19 @@ func parseCode(srcFile string, wlist map[string]struct{}) ([]structToken, error)
 			}
 
 			for _, field := range structType.Fields.List {
+				// multiple variables can be defined in 1 line
+				fieldToks := make([]fieldToken, 0, len(field.Names))
 				for _, ident := range field.Names {
-					structTok.Fields = append(structTok.Fields, ident.Name)
+					ft := fieldToken{Name: ident.Name}
+					fieldToks = append(fieldToks, ft)
 				}
 
 				switch fieldType := field.Type.(type) {
 				case *ast.Ident:
 					// e.g int, bool, string
-					structTok.Types = append(structTok.Types, fieldType.Name)
+					for i := range fieldToks {
+						fieldToks[i].Type = fieldType.Name
+					}
 				case *ast.SelectorExpr:
 					ident, isIdent := fieldType.X.(*ast.Ident)
 					if !isIdent {
@@ -270,8 +284,9 @@ func parseCode(srcFile string, wlist map[string]struct{}) ([]structToken, error)
 					}
 
 					// e.g time.Time, sql.NullString
-					structTok.Types = append(structTok.Types,
-						fmt.Sprint(ident.Name, ".", fieldType.Sel.Name))
+					for i := range fieldToks {
+						fieldToks[i].Type = fmt.Sprint(ident.Name, ".", fieldType.Sel.Name)
+					}
 				case *ast.StarExpr:
 					selExp, isSelector := fieldType.X.(*ast.SelectorExpr)
 					if !isSelector {
@@ -284,8 +299,9 @@ func parseCode(srcFile string, wlist map[string]struct{}) ([]structToken, error)
 					}
 
 					// e.g *time.Time, *sql.NullString
-					structTok.Types = append(structTok.Types,
-						fmt.Sprint("*", ident.Name, ".", selExp.Sel.Name))
+					for i := range fieldToks {
+						fieldToks[i].Type = fmt.Sprint("*", ident.Name, ".", selExp.Sel.Name)
+					}
 				case *ast.ArrayType:
 					ident, isIdent := fieldType.Elt.(*ast.Ident)
 					if !isIdent {
@@ -293,9 +309,12 @@ func parseCode(srcFile string, wlist map[string]struct{}) ([]structToken, error)
 					}
 
 					// e.g []byte
-					structTok.Types = append(structTok.Types,
-						fmt.Sprint("[]", ident.Name))
+					for i := range fieldToks {
+						fieldToks[i].Type = fmt.Sprint("[]", ident.Name)
+					}
 				}
+
+				structTok.Fields = fieldToks
 
 			}
 
