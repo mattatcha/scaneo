@@ -19,4 +19,3 @@ type unAndEx struct {
 	A int
 	B int
 }
-

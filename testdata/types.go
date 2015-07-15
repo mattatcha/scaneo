@@ -1,5 +1,12 @@
 package testdata
 
+import (
+	"database/sql"
+	"time"
+
+	"github.com/lib/pq"
+)
+
 type boolean struct {
 	a bool
 }

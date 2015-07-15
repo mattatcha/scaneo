@@ -3,6 +3,8 @@ package testdata
 import (
 	"html/template"
 	"time"
+
+	"github.com/lib/pq"
 )
 
 type Post struct {
