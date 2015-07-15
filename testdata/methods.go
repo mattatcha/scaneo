@@ -2,10 +2,13 @@ package testdata
 
 import (
 	"html/template"
+	"regexp"
 	"time"
 
 	"github.com/lib/pq"
 )
+
+var summaryExp *regexp.Regexp = regexp.MustCompile("<p>.*?</p>")
 
 type Post struct {
 	ID        int
