@@ -236,90 +236,78 @@ func parseCode(srcFile string, wlist map[string]struct{}) ([]structToken, error)
 		filter = true
 	}
 
-	// ast.Print(fset, astf)
+	//ast.Print(fset, astf)
 	for _, decl := range astf.Decls {
-		structTok := structToken{
-			Fields: make([]fieldToken, 0, 8),
-		}
-
-		genDecl, isGenDecl := decl.(*ast.GenDecl)
-		if !isGenDecl {
+		genDecl, isGeneralDeclaration := decl.(*ast.GenDecl)
+		if !isGeneralDeclaration {
 			continue
 		}
 
 		for _, spec := range genDecl.Specs {
-			typeSpec, isTypeSpec := spec.(*ast.TypeSpec)
-			if !isTypeSpec {
+			typeSpec, isTypeDeclaration := spec.(*ast.TypeSpec)
+			if !isTypeDeclaration {
 				continue
 			}
 
-			// filter, if necessary
-			if !filter {
-				structTok.Name = typeSpec.Name.Name
-			} else if _, exists := wlist[typeSpec.Name.Name]; filter && !exists {
+			structType, isStructTypeDeclaration := typeSpec.Type.(*ast.StructType)
+			if !isStructTypeDeclaration {
+				continue
+			}
+
+			// found a struct in the source code!
+
+			var structTok structToken
+
+			// filter logic
+			if structName := typeSpec.Name.Name; !filter {
+				// no filter, collect everything
+				structTok.Name = structName
+			} else if _, exists := wlist[structName]; filter && !exists {
+				// if structName not in whitelist, continue
 				continue
 			} else if filter && exists {
-				structTok.Name = typeSpec.Name.Name
+				// structName exists in whitelist
+				structTok.Name = structName
 			}
 
-			structType, isStructType := typeSpec.Type.(*ast.StructType)
-			if !isStructType {
-				continue
-			}
+			structTok.Fields = make([]fieldToken, 0, len(structType.Fields.List))
 
-			for _, field := range structType.Fields.List {
-				// multiple variables can be defined in 1 line
-				fieldToks := make([]fieldToken, 0, len(field.Names))
-				for _, ident := range field.Names {
-					ft := fieldToken{Name: ident.Name}
-					fieldToks = append(fieldToks, ft)
+			// iterate through struct fields (1 line at a time)
+			for _, fieldLine := range structType.Fields.List {
+				fieldToks := make([]fieldToken, len(fieldLine.Names))
+
+				// get field name (or names because multiple vars can be declared in 1 line)
+				for i, fieldName := range fieldLine.Names {
+					fieldToks[i].Name = parseIdent(fieldName)
 				}
 
-				switch fieldType := field.Type.(type) {
+				var fieldType string
+
+				// get field type
+				switch typeToken := fieldLine.Type.(type) {
 				case *ast.Ident:
-					// e.g int, bool, string
-					for i := range fieldToks {
-						fieldToks[i].Type = fieldType.Name
-					}
+					// simple types, e.g. bool, int
+					fieldType = parseIdent(typeToken)
 				case *ast.SelectorExpr:
-					ident, isIdent := fieldType.X.(*ast.Ident)
-					if !isIdent {
+					// struct fields, e.g. time.Time, sql.NullString
+					if fieldType = parseSelector(typeToken); fieldType == "" {
 						continue
-					}
-
-					// e.g time.Time, sql.NullString
-					for i := range fieldToks {
-						fieldToks[i].Type = fmt.Sprint(ident.Name, ".", fieldType.Sel.Name)
-					}
-				case *ast.StarExpr:
-					selExp, isSelector := fieldType.X.(*ast.SelectorExpr)
-					if !isSelector {
-						continue
-					}
-
-					ident, isIdent := selExp.X.(*ast.Ident)
-					if !isIdent {
-						continue
-					}
-
-					// e.g *time.Time, *sql.NullString
-					for i := range fieldToks {
-						fieldToks[i].Type = fmt.Sprint("*", ident.Name, ".", selExp.Sel.Name)
 					}
 				case *ast.ArrayType:
-					ident, isIdent := fieldType.Elt.(*ast.Ident)
-					if !isIdent {
+					// arrays
+					if fieldType = parseArray(typeToken); fieldType == "" {
 						continue
 					}
-
-					// e.g []byte
-					for i := range fieldToks {
-						fieldToks[i].Type = fmt.Sprint("[]", ident.Name)
-					}
+				case *ast.StarExpr:
+					// pointers
 				}
 
-				structTok.Fields = fieldToks
+				// apply type to all variables declared in this line
+				for i := range fieldToks {
+					fieldToks[i].Type = fieldType
+				}
 
+				structTok.Fields = append(structTok.Fields, fieldToks...)
 			}
 
 			structToks = append(structToks, structTok)
@@ -327,6 +315,42 @@ func parseCode(srcFile string, wlist map[string]struct{}) ([]structToken, error)
 	}
 
 	return structToks, nil
+}
+
+func parseIdent(fieldType *ast.Ident) string {
+	// return like byte, string, int
+	return fieldType.Name
+}
+
+func parseSelector(fieldType *ast.SelectorExpr) string {
+	// return like time.Time, sql.NullString
+	ident, isIdent := fieldType.X.(*ast.Ident)
+	if !isIdent {
+		return ""
+	}
+
+	return fmt.Sprintf("%s.%s", parseIdent(ident), fieldType.Sel.Name)
+}
+
+func parseArray(fieldType *ast.ArrayType) string {
+	// return like []byte, []time.Time, []*byte, []*sql.NullString
+	switch arrayType := fieldType.Elt.(type) {
+	case *ast.Ident:
+		return fmt.Sprintf("[]%s", parseIdent(arrayType))
+	case *ast.SelectorExpr:
+		sel := parseSelector(arrayType)
+		if sel == "" {
+			return ""
+		}
+		return fmt.Sprintf("[]%s", sel)
+	}
+
+	return ""
+}
+
+func parseStar(fieldType *ast.StarExpr) string {
+	// return like *bool, *time.Time, *[]byte, and other array stuff
+	return ""
 }
 
 func genFile(fout *os.File, pkg string, unexport bool, toks []structToken) error {
