@@ -10,6 +10,8 @@ import (
 
 var summaryExp *regexp.Regexp = regexp.MustCompile("<p>.*?</p>")
 
+type nonStruct int
+
 type Post struct {
 	ID        int
 	SemURL    string
