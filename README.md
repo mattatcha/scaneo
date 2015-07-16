@@ -7,12 +7,12 @@ Works with any database driver. Don't have to worry about database columns
 and struct names matching or tagging structs. No ORM magic.
 
 ## Installation
-If you have Go installed, then do this.
+Install or upgrade Scaneo with this command.
 ```
-go get github.com/variadico/scaneo
+go get -u github.com/variadico/scaneo
 ```
 
-Otherwise, download the standalone binary from the
+Otherwise, check out the 
 [releases page](https://github.com/variadico/scaneo/releases/latest).
 
 ## Usage
