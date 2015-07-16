@@ -1,6 +1,6 @@
 # Change Log
 
-## unreleased (unreleased)
+## unreleased ()
 
 ### Added
 * change log file
@@ -8,6 +8,7 @@
 
 ### Fixed
 * parsing when multiple variables are declared in the same line
+* structs always exported
 
 ### Removed
 * less focused test source files
