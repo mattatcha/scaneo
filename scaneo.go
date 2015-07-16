@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"go/ast"
@@ -118,38 +119,24 @@ func main() {
 		return
 	}
 
-	inputPaths := flag.Args()
-	if len(inputPaths) == 0 {
-		log.Println("missing input paths")
-		log.Println(usageText)
-		os.Exit(1)
-	}
-
 	if *packName == "current directory" {
 		wd, err := os.Getwd()
 		if err != nil {
-			log.Fatalln("couldn't get working directory:", err)
+			log.Fatal("couldn't get working directory:", err)
 		}
 
 		*packName = filepath.Base(wd)
 	}
 
-	files, err := findFiles(inputPaths)
+	files, err := findFiles(flag.Args())
 	if err != nil {
-		log.Fatal("error searching for files:", err)
-	}
-
-	wmap := make(map[string]struct{})
-	if *whitelist != "" {
-		wSplits := strings.Split(*whitelist, ",")
-		for _, s := range wSplits {
-			wmap[s] = struct{}{}
-		}
+		log.Println("couldn't find files:", err)
+		log.Fatal(usageText)
 	}
 
 	structToks := make([]structToken, 0, 8)
 	for _, file := range files {
-		toks, err := parseCode(file, wmap)
+		toks, err := parseCode(file, *whitelist)
 		if err != nil {
 			log.Println(`"syntax error" - parser probably`)
 			log.Fatal(err)
@@ -158,24 +145,16 @@ func main() {
 		structToks = append(structToks, toks...)
 	}
 
-	if len(structToks) < 1 {
-		log.Println("heads up! no structs found")
-		log.Println("aborting")
-		os.Exit(1)
-	}
-
-	fout, err := os.Create(*outFilename)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer fout.Close()
-
-	if err := genFile(fout, *packName, *unexport, structToks); err != nil {
-		log.Fatalln("couldn't generate file:", err)
+	if err := genFile(*outFilename, *packName, *unexport, structToks); err != nil {
+		log.Fatal("couldn't generate file:", err)
 	}
 }
 
 func findFiles(paths []string) ([]string, error) {
+	if len(paths) < 1 {
+		return nil, errors.New("no starting paths")
+	}
+
 	// using map to prevent duplicate file path entries
 	// in case the user accidently passes the same file path more than once
 	// probably because of autocomplete
@@ -215,11 +194,19 @@ func findFiles(paths []string) ([]string, error) {
 	return deduped, nil
 }
 
-func parseCode(srcFile string, wlist map[string]struct{}) ([]structToken, error) {
+func parseCode(source string, commaList string) ([]structToken, error) {
+	wlist := make(map[string]struct{})
+	if commaList != "" {
+		wSplits := strings.Split(commaList, ",")
+		for _, s := range wSplits {
+			wlist[s] = struct{}{}
+		}
+	}
+
 	structToks := make([]structToken, 0, 8)
 
 	fset := token.NewFileSet()
-	astf, err := parser.ParseFile(fset, srcFile, nil, 0)
+	astf, err := parser.ParseFile(fset, source, nil, 0)
 	if err != nil {
 		return nil, err
 	}
@@ -368,7 +355,17 @@ func parseStar(fieldType *ast.StarExpr) string {
 	return fmt.Sprintf("*%s", starType)
 }
 
-func genFile(fout *os.File, pkg string, unexport bool, toks []structToken) error {
+func genFile(outFile, pkg string, unexport bool, toks []structToken) error {
+	if len(toks) < 1 {
+		return errors.New("no structs found")
+	}
+
+	fout, err := os.Create(outFile)
+	if err != nil {
+		return err
+	}
+	defer fout.Close()
+
 	data := struct {
 		PackageName string
 		Tokens      []structToken
@@ -380,6 +377,7 @@ func genFile(fout *os.File, pkg string, unexport bool, toks []structToken) error
 	}
 
 	if unexport {
+		// func name will be scanFoo instead of ScanFoo
 		data.Visibility = "s"
 	}
 

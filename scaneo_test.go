@@ -1,14 +1,15 @@
 package main
 
 import (
+	"fmt"
 	"go/ast"
 	"go/parser"
 	"go/token"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"sort"
 	"testing"
+	"time"
 )
 
 var (
@@ -203,11 +204,8 @@ func TestFindFiles(t *testing.T) {
 }
 
 func TestWhitelist(t *testing.T) {
-	whitelist := map[string]struct{}{
-		"Exported":   struct{}{},
-		"unexported": struct{}{},
-	}
-	expectedToks := len(whitelist)
+	whitelist := "Exported,unexported"
+	expectedToks := 2
 
 	toks, err := parseCode(testFiles[3], whitelist)
 	if err != nil {
@@ -222,7 +220,8 @@ func TestWhitelist(t *testing.T) {
 }
 
 func TestParseCode(t *testing.T) {
-	noFilter := make(map[string]struct{}, 0)
+	var noFilter string
+
 	for fPath, structToks := range fileStructsMap {
 		// get all struct tokens for a given file
 		toks, err := parseCode(fPath, noFilter)
@@ -286,22 +285,17 @@ func TestGenFile(t *testing.T) {
 		"scanUnexporteds",
 	}
 
-	fout, err := ioutil.TempFile(os.TempDir(), "scaneo-test-")
-	if err != nil {
-		t.Error(err)
-		t.FailNow()
-	}
-	defer os.Remove(fout.Name()) // comment this line to examin generated code
-	defer fout.Close()
+	outFile := filepath.Join(os.TempDir(), fmt.Sprintf("scaneo-test-%d", time.Now().UnixNano()))
 
-	// file, package, unexport, tokens
-	if err := genFile(fout, "testing", true, toks); err != nil {
+	// genFile(file, package, unexport, tokens)
+	if err := genFile(outFile, "testing", true, toks); err != nil {
 		t.Error(err)
 		t.FailNow()
 	}
+	defer os.Remove(outFile) // comment this line to examin generated code
 
 	fset := token.NewFileSet()
-	astf, err := parser.ParseFile(fset, fout.Name(), nil, 0)
+	astf, err := parser.ParseFile(fset, outFile, nil, 0)
 	if err != nil {
 		t.Error(err)
 		t.FailNow()
