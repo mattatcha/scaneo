@@ -29,6 +29,9 @@ func {{$.Visibility}}can{{title .Name}}s(rs *sql.Rows) ([]{{.Name}}, error) {
 		}
 		structs = append(structs, s)
 	}
+	if err = rs.Err(); err != nil {
+		return nil, err
+	}
 	return structs, nil
 }
 
