@@ -13,16 +13,16 @@ import (
 
 var (
 	testFiles = []string{
-		"testdata/access.go",
 		"testdata/declarations.go",
 		"testdata/methods.go",
 		"testdata/types.go",
+		"testdata/visibility.go",
 	}
 
 	testFilesLen = len(testFiles)
 
 	fileStructsMap = map[string][]structToken{
-		"testdata/access.go": []structToken{
+		"testdata/visibility.go": []structToken{
 			{
 				Name: "Exported",
 				Fields: []fieldToken{
@@ -172,7 +172,7 @@ var (
 )
 
 func TestFindFiles(t *testing.T) {
-	inputPaths := []string{"testdata/", testFiles[0]}
+	inputPaths := []string{"testdata/", testFiles[3]}
 
 	files, err := findFiles(inputPaths)
 	if err != nil {
@@ -209,7 +209,7 @@ func TestWhitelist(t *testing.T) {
 	}
 	expectedToks := len(whitelist)
 
-	toks, err := parseCode(testFiles[0], whitelist)
+	toks, err := parseCode(testFiles[3], whitelist)
 	if err != nil {
 		t.Error(err)
 		t.FailNow()
@@ -277,7 +277,7 @@ func TestParseCode(t *testing.T) {
 }
 
 func TestGenFile(t *testing.T) {
-	toks := fileStructsMap["testdata/access.go"][:2]
+	toks := fileStructsMap[testFiles[3]][:2]
 
 	expectedFuncNames := []string{
 		"scanExported",

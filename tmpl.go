@@ -7,7 +7,7 @@ package {{.PackageName}}
 
 import "database/sql"
 
-{{range .Tokens}}func {{$.Access}}can{{title .Name}}(r *sql.Row) ({{.Name}}, error) {
+{{range .Tokens}}func {{$.Visibility}}can{{title .Name}}(r *sql.Row) ({{.Name}}, error) {
 	var s {{.Name}}
 	if err := r.Scan({{range .Fields}}
 		&s.{{.Name}},{{end}}
@@ -17,7 +17,7 @@ import "database/sql"
 	return s, nil
 }
 
-func {{$.Access}}can{{title .Name}}s(rs *sql.Rows) ([]{{.Name}}, error) {
+func {{$.Visibility}}can{{title .Name}}s(rs *sql.Rows) ([]{{.Name}}, error) {
 	structs := make([]{{.Name}}, 0, 16)
 	var err error
 	for rs.Next() {

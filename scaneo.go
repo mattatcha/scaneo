@@ -372,15 +372,15 @@ func genFile(fout *os.File, pkg string, unexport bool, toks []structToken) error
 	data := struct {
 		PackageName string
 		Tokens      []structToken
-		Access      string
+		Visibility  string
 	}{
 		PackageName: pkg,
-		Access:      "S",
+		Visibility:  "S",
 		Tokens:      toks,
 	}
 
 	if unexport {
-		data.Access = "s"
+		data.Visibility = "s"
 	}
 
 	if err := scansTmpl.Execute(fout, data); err != nil {
