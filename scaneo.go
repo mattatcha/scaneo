@@ -78,9 +78,6 @@ type structToken struct {
 }
 
 var (
-	fnMap     = template.FuncMap{"title": strings.Title}
-	scansTmpl = template.Must(template.New("scans").Funcs(fnMap).Parse(scansText))
-
 	outFilename = flag.String("o", "scans.go", "")
 	packName    = flag.String("p", "current directory", "")
 	unexport    = flag.Bool("u", false, "")
@@ -379,6 +376,12 @@ func genFile(outFile, pkg string, unexport bool, toks []structToken) error {
 	if unexport {
 		// func name will be scanFoo instead of ScanFoo
 		data.Visibility = "s"
+	}
+
+	fnMap := template.FuncMap{"title": strings.Title}
+	scansTmpl, err := template.New("scans").Funcs(fnMap).Parse(scansText)
+	if err != nil {
+		return err
 	}
 
 	if err := scansTmpl.Execute(fout, data); err != nil {
