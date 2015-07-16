@@ -173,9 +173,24 @@ var (
 )
 
 func TestFindFiles(t *testing.T) {
-	inputPaths := []string{"testdata/", testFiles[3]}
+	var noPaths []string
+	files, err := findFiles(noPaths)
+	if err == nil {
+		t.Error("no file paths passed")
+		t.Error("should be error")
+		t.FailNow()
+	}
 
-	files, err := findFiles(inputPaths)
+	badPaths := []string{"doesnt/exist", "not/here.txt"}
+	files, err = findFiles(badPaths)
+	if err == nil {
+		t.Error("passed non-existent file paths")
+		t.Error("should be error")
+		t.FailNow()
+	}
+
+	inputPaths := []string{"testdata/", testFiles[3]}
+	files, err = findFiles(inputPaths)
 	if err != nil {
 		t.Error(err)
 		t.FailNow()
@@ -221,6 +236,13 @@ func TestWhitelist(t *testing.T) {
 
 func TestParseCode(t *testing.T) {
 	var noFilter string
+
+	var noSource string
+	if _, err := parseCode(noSource, noFilter); err == nil {
+		t.Error("no source file path passed")
+		t.Error("should be error")
+		t.FailNow()
+	}
 
 	for fPath, structToks := range fileStructsMap {
 		// get all struct tokens for a given file
@@ -276,6 +298,7 @@ func TestParseCode(t *testing.T) {
 }
 
 func TestGenFile(t *testing.T) {
+
 	toks := fileStructsMap[testFiles[3]][:2]
 
 	expectedFuncNames := []string{
@@ -286,6 +309,19 @@ func TestGenFile(t *testing.T) {
 	}
 
 	outFile := filepath.Join(os.TempDir(), fmt.Sprintf("scaneo-test-%d", time.Now().UnixNano()))
+
+	var noToks []structToken
+	if err := genFile(outFile, "testing", true, noToks); err == nil {
+		t.Error("no struct tokens passed")
+		t.Error("should be error")
+		t.FailNow()
+	}
+	var noOutFile string
+	if err := genFile(noOutFile, "testing", true, toks); err == nil {
+		t.Error("no output file path passed")
+		t.Error("should be error")
+		t.FailNow()
+	}
 
 	// genFile(file, package, unexport, tokens)
 	if err := genFile(outFile, "testing", true, toks); err != nil {

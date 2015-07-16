@@ -258,19 +258,17 @@ func parseCode(source string, commaList string) ([]structToken, error) {
 					fieldType = parseIdent(typeToken)
 				case *ast.SelectorExpr:
 					// struct fields, e.g. time.Time, sql.NullString
-					if fieldType = parseSelector(typeToken); fieldType == "" {
-						continue
-					}
+					fieldType = parseSelector(typeToken)
 				case *ast.ArrayType:
 					// arrays
-					if fieldType = parseArray(typeToken); fieldType == "" {
-						continue
-					}
+					fieldType = parseArray(typeToken)
 				case *ast.StarExpr:
 					// pointers
-					if fieldType = parseStar(typeToken); fieldType == "" {
-						continue
-					}
+					fieldType = parseStar(typeToken)
+				}
+
+				if fieldType == "" {
+					continue
 				}
 
 				// apply type to all variables declared in this line
