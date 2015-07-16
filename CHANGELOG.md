@@ -5,6 +5,7 @@
 * change log file
 * more focused test source files
 * upgrade instructions
+* error check after iterating rows
 
 ### Changed
 * ordering of scan functions; scanFoo is now immediately followed by scanFoos
