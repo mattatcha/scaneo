@@ -3,8 +3,6 @@ package testdata
 import (
 	"database/sql"
 	"time"
-
-	"github.com/lib/pq"
 )
 
 type boolean struct {
@@ -35,22 +33,20 @@ type str struct {
 	a string
 }
 
-type slices struct {
-	a []bool
-	b []int
-	c []string
+type structs struct {
+	a sql.NullString
 }
 
-type structs struct {
-	a time.Time
-	b pq.NullTime
-	c sql.NullString
+type slices struct {
+	a []bool
+	b []time.Time
+	c []*byte
+	d []*sql.NullString
 }
 
 type pointers struct {
 	a *bool
-	b *int
-	c *string
-	d *[]byte
-	e *time.Time
+	b *time.Time
+	c *[]byte
+	d *[]sql.NullString
 }
