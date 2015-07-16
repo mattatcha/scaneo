@@ -300,6 +300,9 @@ func parseCode(srcFile string, wlist map[string]struct{}) ([]structToken, error)
 					}
 				case *ast.StarExpr:
 					// pointers
+					if fieldType = parseStar(typeToken); fieldType == "" {
+						continue
+					}
 				}
 
 				// apply type to all variables declared in this line
@@ -334,23 +337,42 @@ func parseSelector(fieldType *ast.SelectorExpr) string {
 
 func parseArray(fieldType *ast.ArrayType) string {
 	// return like []byte, []time.Time, []*byte, []*sql.NullString
-	switch arrayType := fieldType.Elt.(type) {
+	var arrayType string
+
+	switch typeToken := fieldType.Elt.(type) {
 	case *ast.Ident:
-		return fmt.Sprintf("[]%s", parseIdent(arrayType))
+		arrayType = parseIdent(typeToken)
 	case *ast.SelectorExpr:
-		sel := parseSelector(arrayType)
-		if sel == "" {
-			return ""
-		}
-		return fmt.Sprintf("[]%s", sel)
+		arrayType = parseSelector(typeToken)
+	case *ast.StarExpr:
+		arrayType = parseStar(typeToken)
 	}
 
-	return ""
+	if arrayType == "" {
+		return ""
+	}
+
+	return fmt.Sprintf("[]%s", arrayType)
 }
 
 func parseStar(fieldType *ast.StarExpr) string {
 	// return like *bool, *time.Time, *[]byte, and other array stuff
-	return ""
+	var starType string
+
+	switch typeToken := fieldType.X.(type) {
+	case *ast.Ident:
+		starType = parseIdent(typeToken)
+	case *ast.SelectorExpr:
+		starType = parseSelector(typeToken)
+	case *ast.ArrayType:
+		starType = parseArray(typeToken)
+	}
+
+	if starType == "" {
+		return ""
+	}
+
+	return fmt.Sprintf("*%s", starType)
 }
 
 func genFile(fout *os.File, pkg string, unexport bool, toks []structToken) error {
