@@ -1,7 +1,6 @@
 # Change Log
 
-## unreleased ()
-
+## 1.2.0 (2015-07-16)
 ### Added
 * change log file
 * more focused test source files
