@@ -171,10 +171,10 @@ var (
 	}
 )
 
-func TestFilenames(t *testing.T) {
+func TestFindFiles(t *testing.T) {
 	inputPaths := []string{"testdata/", testFiles[0]}
 
-	files, err := filenames(inputPaths)
+	files, err := findFiles(inputPaths)
 	if err != nil {
 		t.Error(err)
 		t.FailNow()

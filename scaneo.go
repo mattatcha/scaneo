@@ -96,10 +96,6 @@ func init() {
 	flag.BoolVar(version, "version", false, "")
 	flag.BoolVar(help, "help", false, "")
 
-	// if err, send usage to stderr
-	// if not err, send usage to stdout
-	// that way people can: scaneo -h | less
-
 	flag.Usage = func() {
 		// an error happened, send to stderr
 		log.Println(usageText)
@@ -112,12 +108,13 @@ func main() {
 
 	if *help {
 		// not an error, send to stdout
+		// that way people can: scaneo -h | less
 		fmt.Println(usageText)
 		return
 	}
 
 	if *version {
-		fmt.Println("scaneo version 1.1.1")
+		fmt.Println("scaneo version dev")
 		return
 	}
 
@@ -137,9 +134,9 @@ func main() {
 		*packName = filepath.Base(wd)
 	}
 
-	files, err := filenames(inputPaths)
+	files, err := findFiles(inputPaths)
 	if err != nil {
-		log.Fatalln("couldn't get filenames:", err)
+		log.Fatal("error searching for files:", err)
 	}
 
 	wmap := make(map[string]struct{})
@@ -178,7 +175,7 @@ func main() {
 	}
 }
 
-func filenames(paths []string) ([]string, error) {
+func findFiles(paths []string) ([]string, error) {
 	files := make([]string, 0, 8)
 
 	for _, path := range paths {
