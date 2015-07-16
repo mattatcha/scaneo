@@ -11,7 +11,6 @@ import (
 	"path/filepath"
 	"strings"
 	"text/template"
-	"unicode"
 )
 
 const (
@@ -78,7 +77,8 @@ type structToken struct {
 }
 
 var (
-	scansTmpl = template.Must(template.New("scans").Parse(scansText))
+	fnMap     = template.FuncMap{"title": strings.Title}
+	scansTmpl = template.Must(template.New("scans").Funcs(fnMap).Parse(scansText))
 
 	outFilename = flag.String("o", "scans.go", "")
 	packName    = flag.String("p", "current directory", "")
@@ -383,17 +383,8 @@ func genFile(fout *os.File, pkg string, unexport bool, toks []structToken) error
 	}{
 		PackageName: pkg,
 		Access:      "S",
+		Tokens:      toks,
 	}
-
-	// always capitalize the first letter of struct types so camel case is
-	// correct, e.g. if struct is foo, then generate scanFoo or ScanFoo, but
-	// never scanfoo or Scanfoo
-	for i := range toks {
-		toks[i].Name = string(unicode.ToTitle(rune(toks[i].Name[0]))) +
-			toks[i].Name[1:]
-	}
-
-	data.Tokens = toks
 
 	if unexport {
 		data.Access = "s"
