@@ -1,6 +1,11 @@
 package main
 
 import (
+	"go/ast"
+	"go/parser"
+	"go/token"
+	"io/ioutil"
+	"os"
 	"path/filepath"
 	"sort"
 	"testing"
@@ -172,13 +177,13 @@ func TestFilenames(t *testing.T) {
 	files, err := filenames(inputPaths)
 	if err != nil {
 		t.Error(err)
-		t.SkipNow()
+		t.FailNow()
 	}
 
 	if testFilesLen != len(files) {
 		t.Error("unexpected file count")
 		t.Errorf("expected: %d; found: %d\n", testFilesLen, len(files))
-		t.SkipNow()
+		t.FailNow()
 	}
 
 	sort.Strings(files)
@@ -192,7 +197,7 @@ func TestFilenames(t *testing.T) {
 			t.Errorf("expected: %s; found: %s\n", testFilename, filename)
 			t.Error("files:", files)
 			t.Error("testFiles:", testFiles)
-			t.SkipNow()
+			t.FailNow()
 		}
 	}
 }
@@ -207,7 +212,7 @@ func TestWhitelist(t *testing.T) {
 	toks, err := parseCode(testFiles[0], whitelist)
 	if err != nil {
 		t.Error(err)
-		t.SkipNow()
+		t.FailNow()
 	}
 
 	if expectedToks != len(toks) {
@@ -223,20 +228,20 @@ func TestParseCode(t *testing.T) {
 		toks, err := parseCode(fPath, noFilter)
 		if err != nil {
 			t.Error(err)
-			t.SkipNow()
+			t.FailNow()
 		}
 
 		if len(structToks) != len(toks) {
 			t.Error("unexpected struct tokens length")
 			t.Errorf("expected: %d; found: %d\n", len(structToks), len(toks))
-			t.SkipNow()
+			t.FailNow()
 		}
 
 		for i := range toks {
 			if structToks[i].Name != toks[i].Name {
 				t.Error("unexpected struct name")
 				t.Errorf("expected: %s; found: %s\n", structToks[i].Name, toks[i].Name)
-				t.SkipNow()
+				t.FailNow()
 			}
 
 			if len(structToks[i].Fields) != len(toks[i].Fields) {
@@ -246,7 +251,7 @@ func TestParseCode(t *testing.T) {
 				t.Errorf("expected: %d; found: %d\n", len(structToks[i].Fields), len(toks[i].Fields))
 				t.Error("expected:", structToks[i].Fields)
 				t.Error("found:", toks[i].Fields)
-				t.SkipNow()
+				t.FailNow()
 			}
 
 			for j := range toks[i].Fields {
@@ -255,7 +260,7 @@ func TestParseCode(t *testing.T) {
 					t.Error("file:", fPath)
 					t.Error("struct:", structToks[i].Name)
 					t.Errorf("expected: %s; found: %s\n", structToks[i].Fields[j].Name, toks[i].Fields[j].Name)
-					t.SkipNow()
+					t.FailNow()
 				}
 
 				if structToks[i].Fields[j].Type != toks[i].Fields[j].Type {
@@ -264,7 +269,7 @@ func TestParseCode(t *testing.T) {
 					t.Error("struct:", structToks[i].Name)
 					t.Error("field:", structToks[i].Fields[j].Name)
 					t.Errorf("expected: %s; found: %s\n", structToks[i].Fields[j].Type, toks[i].Fields[j].Type)
-					t.SkipNow()
+					t.FailNow()
 				}
 			}
 		}
@@ -272,4 +277,57 @@ func TestParseCode(t *testing.T) {
 }
 
 func TestGenFile(t *testing.T) {
+	toks := fileStructsMap["testdata/access.go"][:2]
+
+	expectedFuncNames := []string{
+		"scanExported",
+		"scanUnexported",
+		"scanExporteds",
+		"scanUnexporteds",
+	}
+
+	fout, err := ioutil.TempFile(os.TempDir(), "scaneo-test-")
+	if err != nil {
+		t.Error(err)
+		t.FailNow()
+	}
+	defer os.Remove(fout.Name()) // comment this line to examin generated code
+	defer fout.Close()
+
+	// file, package, unexport, tokens
+	if err := genFile(fout, "testing", true, toks); err != nil {
+		t.Error(err)
+		t.FailNow()
+	}
+
+	fset := token.NewFileSet()
+	astf, err := parser.ParseFile(fset, fout.Name(), nil, 0)
+	if err != nil {
+		t.Error(err)
+		t.FailNow()
+	}
+
+	scanFuncs := make([]string, 0, len(toks))
+	for _, dec := range astf.Decls {
+		funcDecl, isFuncDecl := dec.(*ast.FuncDecl)
+		if !isFuncDecl {
+			continue
+		}
+
+		scanFuncs = append(scanFuncs, funcDecl.Name.String())
+	}
+
+	if len(toks)*2 != len(scanFuncs) {
+		t.Error("unexpected number of scan functions found")
+		t.Errorf("expected: %d; found: %d\n", len(toks)*2, len(scanFuncs))
+		t.FailNow()
+	}
+
+	for i := range expectedFuncNames {
+		if expectedFuncNames[i] != scanFuncs[i] {
+			t.Error("unexpected scan function found")
+			t.Errorf("expected: %s; found: %s\n", expectedFuncNames[i], scanFuncs[i])
+		}
+	}
+
 }
