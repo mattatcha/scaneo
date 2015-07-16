@@ -77,31 +77,22 @@ type structToken struct {
 	Fields []fieldToken
 }
 
-var (
-	outFilename = flag.String("o", "scans.go", "")
-	packName    = flag.String("p", "current directory", "")
-	unexport    = flag.Bool("u", false, "")
-	whitelist   = flag.String("w", "", "")
-	version     = flag.Bool("v", false, "")
-	help        = flag.Bool("h", false, "")
-)
+func main() {
+	log.SetFlags(0)
 
-func init() {
+	outFilename := flag.String("o", "scans.go", "")
+	packName := flag.String("p", "current directory", "")
+	unexport := flag.Bool("u", false, "")
+	whitelist := flag.String("w", "", "")
+	version := flag.Bool("v", false, "")
+	help := flag.Bool("h", false, "")
 	flag.StringVar(outFilename, "output", "scans.go", "")
 	flag.StringVar(packName, "package", "current directory", "")
 	flag.BoolVar(unexport, "unexport", false, "")
 	flag.StringVar(whitelist, "whitelist", "", "")
 	flag.BoolVar(version, "version", false, "")
 	flag.BoolVar(help, "help", false, "")
-
-	flag.Usage = func() {
-		// an error happened, send to stderr
-		log.Println(usageText)
-	}
-}
-
-func main() {
-	log.SetFlags(0)
+	flag.Usage = func() { log.Println(usageText) } // call on flag error
 	flag.Parse()
 
 	if *help {
