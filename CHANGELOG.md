@@ -6,6 +6,9 @@
 * change log file
 * more focused test source files
 
+### Changed
+* ordering of scan functions; scanFoo is now immediately followed by scanFoos
+
 ### Fixed
 * parsing when multiple variables are declared in the same line
 * structs always exported
