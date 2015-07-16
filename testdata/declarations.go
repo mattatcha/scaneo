@@ -12,8 +12,8 @@ type (
 	}
 
 	t2 struct {
-		a int
-		b bool
+		a string
+		b byte
 	}
 )
 
