@@ -4,6 +4,7 @@
 ### Added
 * change log file
 * more focused test source files
+* upgrade instructions
 
 ### Changed
 * ordering of scan functions; scanFoo is now immediately followed by scanFoos
@@ -14,3 +15,4 @@
 
 ### Removed
 * less focused test source files
+* pre-compiled binaries
