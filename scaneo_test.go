@@ -281,8 +281,8 @@ func TestGenFile(t *testing.T) {
 
 	expectedFuncNames := []string{
 		"scanExported",
-		"scanUnexported",
 		"scanExporteds",
+		"scanUnexported",
 		"scanUnexporteds",
 	}
 

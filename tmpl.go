@@ -16,7 +16,8 @@ import "database/sql"
 	}
 	return s, nil
 }
-{{end}}{{range .Tokens}}func {{$.Access}}can{{title .Name}}s(rs *sql.Rows) ([]{{.Name}}, error) {
+
+func {{$.Access}}can{{title .Name}}s(rs *sql.Rows) ([]{{.Name}}, error) {
 	structs := make([]{{.Name}}, 0, 16)
 	var err error
 	for rs.Next() {
@@ -30,5 +31,6 @@ import "database/sql"
 	}
 	return structs, nil
 }
+
 {{end}}{{end}}`
 )
