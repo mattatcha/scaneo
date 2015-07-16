@@ -10,7 +10,7 @@ import "database/sql"
 {{range .Tokens}}func {{$.Access}}can{{.Name}}(r *sql.Row) ({{.Name}}, error) {
 	var s {{.Name}}
 	if err := r.Scan({{range .Fields}}
-		&s.{{.}},{{end}}
+		&s.{{.Name}},{{end}}
 	); err != nil {
 		return {{.Name}}{}, err
 	}
@@ -22,7 +22,7 @@ import "database/sql"
 	for rs.Next() {
 		var s {{.Name}}
 		if err = rs.Scan({{range .Fields}}
-			&s.{{.}},{{end}}
+			&s.{{.Name}},{{end}}
 		); err != nil {
 			return nil, err
 		}
