@@ -3,3 +3,4 @@ scaneo
 scans.go
 *.swp
 do.sh
+ast.log
