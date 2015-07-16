@@ -176,7 +176,10 @@ func main() {
 }
 
 func findFiles(paths []string) ([]string, error) {
-	files := make([]string, 0, 8)
+	// using map to prevent duplicate file path entries
+	// in case the user accidently passes the same file path more than once
+	// probably because of autocomplete
+	files := make(map[string]struct{})
 
 	for _, path := range paths {
 		info, err := os.Stat(path)
@@ -184,35 +187,28 @@ func findFiles(paths []string) ([]string, error) {
 			return nil, err
 		}
 
-		if info.IsDir() {
-			filepath.Walk(path, func(startDir string, subInfo os.FileInfo, _ error) error {
-				if subInfo.IsDir() {
-					return nil
-				} else if subInfo.Name()[0] == '.' {
-					return nil
-				}
-
-				files = append(files, startDir)
-				return nil
-			})
-
+		if !info.IsDir() {
+			// add file path to files
+			files[path] = struct{}{}
 			continue
 		}
 
-		files = append(files, path)
+		filepath.Walk(path, func(fp string, fi os.FileInfo, _ error) error {
+			if fi.IsDir() {
+				// will still enter directory
+				return nil
+			} else if fi.Name()[0] == '.' {
+				return nil
+			}
+
+			// add file path to files
+			files[fp] = struct{}{}
+			return nil
+		})
 	}
 
-	// file list needs to be deduped in case of
-	// scaneo foo.go foo.go
-	// scaneo somedir/ somedir/foo.go
-	// and because it wouldn't make sense to generate code for the same struct twice
-	fileMap := make(map[string]struct{})
-	for _, f := range files {
-		fileMap[f] = struct{}{}
-	}
-
-	deduped := make([]string, 0, len(fileMap))
-	for f := range fileMap {
+	deduped := make([]string, 0, len(files))
+	for f := range files {
 		deduped = append(deduped, f)
 	}
 
