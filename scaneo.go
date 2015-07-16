@@ -103,7 +103,7 @@ func main() {
 	}
 
 	if *version {
-		fmt.Println("scaneo version dev")
+		fmt.Println("scaneo version 1.2.0")
 		return
 	}
 
